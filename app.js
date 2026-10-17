@@ -1,6 +1,6 @@
 /**
- * API Pulse - Stress Tester & Rate Limit Inspector
- * Client-side Controller & Execution Engine
+ * API Pulse - Pure Client-Side Stress Tester & Rate Limit Inspector
+ * 100% Browser Executed - Zero Background Server Required
  */
 
 // Application State
@@ -8,14 +8,13 @@ const state = {
   isRunning: false,
   isPaused: false,
   isStopped: false,
-  hasProxy: false,
   
   // Test Config
   totalRequests: 100,
   concurrency: 5,
   delayMs: 0,
   stopOn429: true,
-  useProxy: true,
+  useCorsProxy: false,
   
   // Tracking
   requestIndex: 0,
@@ -51,10 +50,7 @@ let statusChart = null;
 // DOM Elements Cache
 const DOM = {
   themeToggle: document.getElementById('theme-toggle'),
-  proxyStatus: document.getElementById('proxy-status'),
-  serverDot: document.getElementById('server-dot'),
-  serverStatusText: document.getElementById('server-status-text'),
-  useProxyToggle: document.getElementById('use-proxy'),
+  corsProxyToggle: document.getElementById('cors-proxy'),
   
   httpMethod: document.getElementById('http-method'),
   targetUrl: document.getElementById('target-url'),
@@ -75,7 +71,6 @@ const DOM = {
   btnPause: document.getElementById('btn-pause'),
   btnStop: document.getElementById('btn-stop'),
   btnClear: document.getElementById('btn-clear'),
-  btnResetMock: document.getElementById('btn-reset-mock'),
   
   statusBadge: document.getElementById('status-badge'),
   progressPercent: document.getElementById('progress-percent'),
@@ -133,10 +128,6 @@ const DOM = {
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initCharts();
-  if (window.location.protocol.startsWith('http')) {
-    DOM.targetUrl.value = `${window.location.origin}/api/mock-api?limit=50&window=60`;
-  }
-  checkProxyBackend();
   bindEvents();
 });
 
@@ -154,7 +145,6 @@ DOM.themeToggle.addEventListener('click', () => {
   localStorage.setItem('api-tester-theme', next);
   DOM.themeToggle.textContent = next === 'dark' ? '🌙 Dark' : '☀️ Light';
   
-  // Update charts theme colors
   if (latencyChart && statusChart) {
     const isDark = next === 'dark';
     const textColor = isDark ? '#94a3b8' : '#64748b';
@@ -167,35 +157,6 @@ DOM.themeToggle.addEventListener('click', () => {
     latencyChart.update();
   }
 });
-
-// Detect if local Node.js Proxy server is reachable
-async function checkProxyBackend() {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-    const resp = await fetch('/api/mock-api?limit=1', { signal: controller.signal });
-    clearTimeout(timeoutId);
-    
-    if (resp.ok) {
-      state.hasProxy = true;
-      DOM.serverDot.className = 'indicator-dot';
-      DOM.serverStatusText.textContent = 'Proxy Online (CORS Bypassed)';
-      DOM.proxyStatus.style.borderColor = 'var(--success)';
-      DOM.useProxyToggle.checked = true;
-      state.useProxy = true;
-      return;
-    }
-  } catch (err) {
-    // Proxy not available (running as raw file)
-  }
-  
-  state.hasProxy = false;
-  DOM.serverDot.className = 'indicator-dot offline';
-  DOM.serverStatusText.textContent = 'Direct Mode (Browser Fetch)';
-  DOM.proxyStatus.style.borderColor = 'var(--warning)';
-  DOM.useProxyToggle.checked = false;
-  state.useProxy = false;
-}
 
 // Chart.js Visualizations
 function initCharts() {
@@ -265,7 +226,7 @@ function initCharts() {
         },
         y1: {
           type: 'linear',
-          display: false, // will show when rate limit headers exist
+          display: false,
           position: 'right',
           title: { display: true, text: 'Quota Remaining', color: '#f59e0b', font: { size: 10 } },
           grid: { drawOnChartArea: false },
@@ -312,14 +273,14 @@ function initCharts() {
 function bindEvents() {
   // Preset Chips
   document.querySelectorAll('.preset-chip').forEach(chip => {
-    chip.addEventListener('click', (e) => {
+    chip.addEventListener('click', () => {
       document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
       applyPreset(chip.getAttribute('data-preset'));
     });
   });
 
-  // Number selector quick chips
+  // Number quick chips
   document.querySelectorAll('.num-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       document.querySelectorAll('.num-chip').forEach(c => c.classList.remove('active'));
@@ -347,12 +308,9 @@ function bindEvents() {
     DOM.delayVal.textContent = `${e.target.value}ms`;
   });
 
-  // Use proxy toggle
-  DOM.useProxyToggle.addEventListener('change', (e) => {
-    state.useProxy = e.target.checked;
-    if (state.useProxy && !state.hasProxy) {
-      alert("Note: Node.js server doesn't seem to be running on localhost:3000. Start it with 'node server.js' for proxy mode to work.");
-    }
+  // CORS Proxy toggle
+  DOM.corsProxyToggle.addEventListener('change', (e) => {
+    state.useCorsProxy = e.target.checked;
   });
 
   // Tabs
@@ -385,14 +343,13 @@ function bindEvents() {
     }
   });
 
-  // Execution Controls
+  // Controls
   DOM.btnStart.addEventListener('click', startTest);
   DOM.btnPause.addEventListener('click', togglePause);
   DOM.btnStop.addEventListener('click', stopTest);
   DOM.btnClear.addEventListener('click', clearAll);
-  DOM.btnResetMock.addEventListener('click', resetMockApi);
 
-  // Filter Pills for Logs Table
+  // Table Filters
   document.querySelectorAll('.filter-pill').forEach(pill => {
     pill.addEventListener('click', () => {
       document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
@@ -406,7 +363,7 @@ function bindEvents() {
   DOM.btnExportCsv.addEventListener('click', exportCsv);
   DOM.btnExportJson.addEventListener('click', exportJson);
 
-  // Modal Close
+  // Modal
   DOM.btnCloseModal.addEventListener('click', () => {
     DOM.detailModal.classList.remove('active');
   });
@@ -427,20 +384,9 @@ function updateHeaderCount() {
   DOM.headerCount.textContent = count;
 }
 
-// Preset configurations
+// Preset configurations (all open public CORS endpoints)
 function applyPreset(name) {
-    const baseOrigin = window.location.protocol.startsWith('http') ? window.location.origin : 'http://localhost:3000';
-    DOM.httpMethod.value = 'GET';
-    DOM.targetUrl.value = `${baseOrigin}/api/mock-api?limit=50&window=60`;
-    DOM.totalRequestsInput.value = 100;
-    DOM.requestCountDisplay.textContent = '100';
-    DOM.statTotal.textContent = '100';
-    DOM.concurrencySlider.value = 5;
-    DOM.concurrencyVal.textContent = '5';
-    DOM.delaySlider.value = 50;
-    DOM.delayVal.textContent = '50ms';
-    DOM.stopOn429.checked = true;
-  } else if (name === 'json-get-100') {
+  if (name === 'json-get-100') {
     DOM.httpMethod.value = 'GET';
     DOM.targetUrl.value = 'https://jsonplaceholder.typicode.com/posts/1';
     DOM.totalRequestsInput.value = 100;
@@ -450,6 +396,17 @@ function applyPreset(name) {
     DOM.concurrencyVal.textContent = '10';
     DOM.delaySlider.value = 0;
     DOM.delayVal.textContent = '0ms';
+  } else if (name === 'rate-limit-demo') {
+    DOM.httpMethod.value = 'GET';
+    DOM.targetUrl.value = 'https://httpbin.org/status/429';
+    DOM.totalRequestsInput.value = 10;
+    DOM.requestCountDisplay.textContent = '10';
+    DOM.statTotal.textContent = '10';
+    DOM.concurrencySlider.value = 2;
+    DOM.concurrencyVal.textContent = '2';
+    DOM.delaySlider.value = 100;
+    DOM.delayVal.textContent = '100ms';
+    DOM.stopOn429.checked = true;
   } else if (name === 'heavy-1000') {
     DOM.httpMethod.value = 'GET';
     DOM.targetUrl.value = 'https://jsonplaceholder.typicode.com/posts/1';
@@ -477,28 +434,15 @@ function applyPreset(name) {
   }
 }
 
-// Reset Mock API rate limits
-async function resetMockApi() {
-  try {
-    const res = await fetch('/api/mock-api/reset');
-    if (res.ok) {
-      alert('Mock API rate limits have been reset to fresh window!');
-      clearAll();
-    }
-  } catch (e) {
-    alert('Could not reach mock reset endpoint. Ensure server.js is running.');
-  }
-}
-
 // Start Load Test
 async function startTest() {
-  const url = DOM.targetUrl.value.trim();
-  if (!url) {
+  const rawUrl = DOM.targetUrl.value.trim();
+  if (!rawUrl) {
     alert('Please enter a valid target URL');
     return;
   }
 
-  // Reset state for new test run
+  // Reset state
   state.isRunning = true;
   state.isPaused = false;
   state.isStopped = false;
@@ -506,7 +450,7 @@ async function startTest() {
   state.concurrency = parseInt(DOM.concurrencySlider.value, 10) || 5;
   state.delayMs = parseInt(DOM.delaySlider.value, 10) || 0;
   state.stopOn429 = DOM.stopOn429.checked;
-  state.useProxy = DOM.useProxyToggle.checked;
+  state.useCorsProxy = DOM.corsProxyToggle.checked;
   
   state.requestIndex = 0;
   state.completedCount = 0;
@@ -547,15 +491,12 @@ async function startTest() {
   DOM.rlBreachReq.textContent = '--';
   DOM.rlSustainableRps.textContent = '--';
 
-  // Clear charts
   resetCharts();
   renderLogsTable();
 
-  // Start Elapsed & ETA Timer
   if (state.elapsedInterval) clearInterval(state.elapsedInterval);
   state.elapsedInterval = setInterval(updateElapsedAndEta, 200);
 
-  // Prepare custom headers
   const customHeaders = getHeadersFromUI();
   const rawBody = DOM.requestBody.value;
   const method = DOM.httpMethod.value;
@@ -564,7 +505,7 @@ async function startTest() {
   const workers = [];
   const activeConcurrency = Math.min(state.concurrency, state.totalRequests);
   for (let i = 0; i < activeConcurrency; i++) {
-    workers.push(runWorker(i + 1, url, method, customHeaders, rawBody));
+    workers.push(runWorker(i + 1, rawUrl, method, customHeaders, rawBody));
   }
 
   await Promise.all(workers);
@@ -577,17 +518,15 @@ async function runWorker(workerId, url, method, headers, bodyTemplate) {
   updateProgressUI();
 
   while (state.requestIndex < state.totalRequests && !state.isStopped) {
-    // Check Pause
     while (state.isPaused && !state.isStopped) {
       await sleep(100);
     }
     if (state.isStopped) break;
 
-    // Pick request atomically
     const reqNum = ++state.requestIndex;
     if (reqNum > state.totalRequests) break;
 
-    // Render body templates
+    // Render variables
     let processedBody = null;
     if (bodyTemplate && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
       processedBody = bodyTemplate
@@ -596,25 +535,21 @@ async function runWorker(workerId, url, method, headers, bodyTemplate) {
         .replace(/{{random}}/g, Math.random().toString(36).substring(2, 9));
     }
 
-    // Execute Request
+    // Execute Request 100% in Browser
     const result = await executeSingleRequest(reqNum, url, method, headers, processedBody);
     state.results.push(result);
     state.completedCount++;
 
-    // Inspect rate-limit headers & breach
     inspectRateLimit(result);
-
-    // Update real-time metrics
     updateMetricsUI();
     addChartDataPoint(result);
 
-    // Check stop-on-429 rule
+    // Stop on 429
     if (result.status === 429 && state.stopOn429) {
       triggerRateLimitStop(reqNum);
       break;
     }
 
-    // Delay throttle if configured
     if (state.delayMs > 0 && !state.isStopped) {
       await sleep(state.delayMs);
     }
@@ -624,123 +559,82 @@ async function runWorker(workerId, url, method, headers, bodyTemplate) {
   updateProgressUI();
 }
 
-// Execute Single Request (Proxy mode vs Browser Direct mode)
+// Pure Client-side Browser Fetch
 async function executeSingleRequest(id, url, method, headers, body) {
   const reqStart = performance.now();
   
-  if (state.useProxy && state.hasProxy) {
-    // Mode 1: Proxy Mode (captures all headers & bypasses CORS)
-    try {
-      const response = await fetch('/api/proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: url,
-          method: method,
-          headers: headers,
-          body: body
-        })
-      });
+  // Optional public CORS bypass if target blocks CORS
+  let targetUrl = url;
+  if (state.useCorsProxy) {
+    targetUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+  }
 
-      const data = await response.json();
-      return {
-        id: id,
-        timestamp: new Date().toLocaleTimeString(),
-        method: method,
-        url: url,
-        status: data.status,
-        statusText: data.statusText,
-        duration: Math.round(data.duration || (performance.now() - reqStart)),
-        headers: data.headers || {},
-        rateLimitHeaders: data.rateLimitHeaders || {},
-        bodySnippet: data.bodySnippet || '',
-        isError: !!data.isError
-      };
-    } catch (err) {
-      const duration = Math.round(performance.now() - reqStart);
-      return {
-        id: id,
-        timestamp: new Date().toLocaleTimeString(),
-        method: method,
-        url: url,
-        status: 0,
-        statusText: err.message || 'Proxy Connection Failed',
-        duration: duration,
-        headers: {},
-        rateLimitHeaders: {},
-        bodySnippet: 'Failed to communicate with proxy backend.',
-        isError: true
-      };
+  try {
+    const fetchOpts = {
+      method: method,
+      headers: headers
+    };
+    if (body && ['POST', 'PUT', 'PATCH'].includes(method)) {
+      fetchOpts.body = body;
     }
-  } else {
-    // Mode 2: Direct Browser Fetch (for CORS-enabled APIs)
+
+    const response = await fetch(targetUrl, fetchOpts);
+    const duration = Math.round(performance.now() - reqStart);
+    
+    // Extract available headers
+    const resHeaders = {};
+    const rateLimitHeaders = {};
+    response.headers.forEach((v, k) => {
+      const lower = k.toLowerCase();
+      resHeaders[lower] = v;
+      if (lower.includes('ratelimit') || lower === 'retry-after') {
+        rateLimitHeaders[lower] = v;
+      }
+    });
+
+    let textSnippet = '';
     try {
-      const fetchOpts = {
-        method: method,
-        headers: headers
-      };
-      if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-        fetchOpts.body = body;
-      }
-
-      const response = await fetch(url, fetchOpts);
-      const duration = Math.round(performance.now() - reqStart);
-      
-      // Extract available headers
-      const resHeaders = {};
-      const rateLimitHeaders = {};
-      response.headers.forEach((v, k) => {
-        resHeaders[k] = v;
-        const lower = k.toLowerCase();
-        if (lower.includes('ratelimit') || lower === 'retry-after') {
-          rateLimitHeaders[lower] = v;
-        }
-      });
-
-      let textSnippet = '';
-      try {
-        textSnippet = (await response.text()).slice(0, 3000);
-      } catch (e) {
-        textSnippet = '(Body not readable)';
-      }
-
-      return {
-        id: id,
-        timestamp: new Date().toLocaleTimeString(),
-        method: method,
-        url: url,
-        status: response.status,
-        statusText: response.statusText,
-        duration: duration,
-        headers: resHeaders,
-        rateLimitHeaders: rateLimitHeaders,
-        bodySnippet: textSnippet,
-        isError: false
-      };
-    } catch (err) {
-      const duration = Math.round(performance.now() - reqStart);
-      return {
-        id: id,
-        timestamp: new Date().toLocaleTimeString(),
-        method: method,
-        url: url,
-        status: 0,
-        statusText: err.name === 'TypeError' ? 'CORS / Network Error' : err.message,
-        duration: duration,
-        headers: {},
-        rateLimitHeaders: {},
-        bodySnippet: `Failed: ${err.message}. If CORS blocked, turn on Proxy Mode with 'node server.js'.`,
-        isError: true
-      };
+      textSnippet = (await response.text()).slice(0, 3000);
+    } catch (e) {
+      textSnippet = '(Body snippet not readable)';
     }
+
+    return {
+      id: id,
+      timestamp: new Date().toLocaleTimeString(),
+      method: method,
+      url: url,
+      status: response.status,
+      statusText: response.statusText,
+      duration: duration,
+      headers: resHeaders,
+      rateLimitHeaders: rateLimitHeaders,
+      bodySnippet: textSnippet,
+      isError: false
+    };
+  } catch (err) {
+    const duration = Math.round(performance.now() - reqStart);
+    const isCors = err.message && err.message.toLowerCase().includes('failed to fetch');
+    return {
+      id: id,
+      timestamp: new Date().toLocaleTimeString(),
+      method: method,
+      url: url,
+      status: 0,
+      statusText: isCors ? 'CORS / Network Error' : (err.message || 'Error'),
+      duration: duration,
+      headers: {},
+      rateLimitHeaders: {},
+      bodySnippet: isCors ? 'Request blocked by browser CORS policy. Toggle "CORS Proxy" in settings to bypass.' : err.message,
+      isError: true
+    };
   }
 }
 
-// Rate Limit & Header Inspection Logic
+// Rate Limit & Header Inspection
 function inspectRateLimit(result) {
   const rl = result.rateLimitHeaders || {};
   
-  // Standard & Vendor Rate Limit Header Keys
   const limitVal = rl['x-ratelimit-limit'] || rl['ratelimit-limit'] || rl['x-rate-limit-limit'];
   const remainingVal = rl['x-ratelimit-remaining'] || rl['ratelimit-remaining'] || rl['x-rate-limit-remaining'];
   const resetVal = rl['x-ratelimit-reset'] || rl['ratelimit-reset'] || rl['x-rate-limit-reset'];
@@ -759,7 +653,6 @@ function inspectRateLimit(result) {
       state.rateLimit.remaining = parseInt(remainingVal, 10);
       DOM.rlRemaining.textContent = state.rateLimit.remaining.toLocaleString();
       
-      // Visual coloring based on remaining capacity
       if (state.rateLimit.limit) {
         const ratio = state.rateLimit.remaining / state.rateLimit.limit;
         if (ratio <= 0.1) DOM.rlRemaining.style.color = 'var(--danger)';
@@ -768,27 +661,19 @@ function inspectRateLimit(result) {
       }
     }
 
-    // Handle Reset Time
     if (resetVal !== undefined || retryAfter !== undefined) {
       let secondsLeft = 0;
       if (retryAfter !== undefined) {
         secondsLeft = parseInt(retryAfter, 10) || 0;
       } else if (resetVal !== undefined) {
         const resetNum = parseInt(resetVal, 10);
-        if (resetNum > 1000000000) {
-          // Epoch timestamp
-          secondsLeft = Math.max(0, Math.ceil(resetNum - (Date.now() / 1000)));
-        } else {
-          // Delta seconds
-          secondsLeft = resetNum;
-        }
+        secondsLeft = resetNum > 1000000000 ? Math.max(0, Math.ceil(resetNum - (Date.now() / 1000))) : resetNum;
       }
 
       state.rateLimit.resetCountdown = secondsLeft;
       DOM.rlReset.textContent = `${secondsLeft}s`;
       startResetCountdown(secondsLeft);
 
-      // Calculate Sustainable Safe RPS
       if (state.rateLimit.limit && secondsLeft > 0) {
         const safeRps = (state.rateLimit.limit / Math.max(1, secondsLeft)).toFixed(2);
         DOM.rlSustainableRps.textContent = `${safeRps}/s`;
@@ -815,7 +700,7 @@ function inspectRateLimit(result) {
   }
 }
 
-// Countdown for Reset
+// Reset Countdown
 function startResetCountdown(initialSeconds) {
   if (state.resetTimerInterval) clearInterval(state.resetTimerInterval);
   let remaining = initialSeconds;
@@ -840,7 +725,7 @@ function triggerRateLimitStop(reqNum) {
   DOM.statusBadge.style.color = 'var(--warning)';
   DOM.rateLimitBanner.style.display = 'flex';
   DOM.rateLimitBanner.className = 'alert-banner alert-warning';
-  DOM.rateLimitMsg.innerHTML = `🛡️ <strong>Auto-Stop Triggered:</strong> Execution paused automatically upon hitting HTTP 429 at Request <strong>#${reqNum}</strong> to prevent server lockout.`;
+  DOM.rateLimitMsg.innerHTML = `🛡️ <strong>Auto-Stop Triggered:</strong> Execution paused automatically upon hitting HTTP 429 at Request <strong>#${reqNum}</strong>.`;
 }
 
 // Update Elapsed & ETA
@@ -850,7 +735,7 @@ function updateElapsedAndEta() {
   DOM.statElapsed.textContent = `${elapsedSec.toFixed(1)}s`;
 
   if (state.completedCount > 0 && state.isRunning) {
-    const rate = state.completedCount / elapsedSec; // requests per sec
+    const rate = state.completedCount / elapsedSec;
     const remainingReqs = state.totalRequests - state.completedCount;
     if (rate > 0 && remainingReqs > 0) {
       const etaSec = remainingReqs / rate;
@@ -897,27 +782,22 @@ function updateMetricsUI() {
     else countFail++;
   }
 
-  // Success rate (2xx)
   const successPct = Math.round((count2xx / total) * 100);
   DOM.mSuccessRate.textContent = `${successPct}%`;
   DOM.m2xx.textContent = count2xx.toLocaleString();
 
-  // 429
   DOM.m429.textContent = count429.toLocaleString();
   const rateLimitPct = ((count429 / total) * 100).toFixed(1);
   DOM.m429Pct.textContent = `${rateLimitPct}% of total`;
 
-  // Errors
   DOM.mErrors.textContent = (count4xx + count5xx + countFail).toLocaleString();
   DOM.m4xx.textContent = count4xx.toLocaleString();
   DOM.m5xx.textContent = (count5xx + countFail).toLocaleString();
 
-  // RPS Throughput
   const elapsedSec = Math.max(0.1, (Date.now() - state.startTime) / 1000);
   const rps = (total / elapsedSec).toFixed(1);
   DOM.mRps.textContent = rps;
 
-  // Latency Metrics
   latencies.sort((a, b) => a - b);
   const avg = Math.round(latencySum / total);
   const min = latencies[0];
@@ -931,16 +811,14 @@ function updateMetricsUI() {
   DOM.mLatencyMax.textContent = max;
   DOM.mLatencyP95.textContent = `${p50} / ${p95} / ${p99}ms`;
 
-  // Status donut update
   statusChart.data.datasets[0].data = [count2xx, count429, count4xx, count5xx, countFail];
   statusChart.update('none');
 }
 
-// Chart data buffering for high performance at 1000+ requests
+// Chart buffer
 let chartUpdatePending = false;
 function addChartDataPoint(result) {
   if (state.totalRequests > 200 && result.id % Math.ceil(state.totalRequests / 150) !== 0 && result.id !== state.totalRequests && result.status !== 429) {
-    // Downsample chart points to prevent lag on 1000+ tests
     return;
   }
 
@@ -978,7 +856,7 @@ function resetCharts() {
   statusChart.update();
 }
 
-// Toggle Pause
+// Pause
 function togglePause() {
   state.isPaused = !state.isPaused;
   if (state.isPaused) {
@@ -992,15 +870,14 @@ function togglePause() {
   }
 }
 
-// Stop Test
+// Stop
 function stopTest() {
   state.isStopped = true;
-  DOM.statusBadge.textContent = 'Stopped by User';
+  DOM.statusBadge.textContent = 'Stopped';
   DOM.statusBadge.style.color = 'var(--danger)';
   finishTest();
 }
 
-// Finish Test
 function finishTest() {
   state.isRunning = false;
   if (state.elapsedInterval) clearInterval(state.elapsedInterval);
@@ -1019,7 +896,7 @@ function finishTest() {
   renderLogsTable();
 }
 
-// Clear All
+// Clear
 function clearAll() {
   if (state.isRunning) return;
   state.results = [];
@@ -1087,7 +964,6 @@ function renderLogsTable() {
     return;
   }
 
-  // Display top 200 rows to ensure snappy UI responsiveness
   const displayRows = filtered.slice(-200).reverse();
   let html = '';
 
@@ -1121,7 +997,7 @@ function renderLogsTable() {
   DOM.logsTbody.innerHTML = html;
 }
 
-// View Request Detail Modal
+// Modal Detail
 window.viewDetails = function(reqId) {
   const item = state.results.find(r => r.id === reqId);
   if (!item) return;
@@ -1137,7 +1013,6 @@ window.viewDetails = function(reqId) {
   DOM.modalStatusBadge.textContent = `${item.status} ${item.statusText}`;
   DOM.modalDuration.textContent = `${item.duration}ms (${item.timestamp})`;
 
-  // Rate limit headers
   const rlKeys = Object.keys(item.rateLimitHeaders || {});
   if (rlKeys.length > 0) {
     DOM.modalRatelimitHeaders.textContent = JSON.stringify(item.rateLimitHeaders, null, 2);
@@ -1145,7 +1020,6 @@ window.viewDetails = function(reqId) {
     DOM.modalRatelimitHeaders.textContent = 'No rate limit headers found in response.';
   }
 
-  // Response body preview
   try {
     const parsed = JSON.parse(item.bodySnippet);
     DOM.modalResponseBody.textContent = JSON.stringify(parsed, null, 2);
@@ -1153,12 +1027,10 @@ window.viewDetails = function(reqId) {
     DOM.modalResponseBody.textContent = item.bodySnippet || '(empty body)';
   }
 
-  // All headers
   DOM.modalAllHeaders.textContent = JSON.stringify(item.headers, null, 2);
   DOM.detailModal.classList.add('active');
 };
 
-// Helper: Custom headers
 function getHeadersFromUI() {
   const headers = {};
   DOM.headersList.querySelectorAll('.header-row').forEach(row => {
@@ -1227,8 +1099,7 @@ function exportJson() {
       percentiles: DOM.mLatencyP95.textContent,
       rateLimitDetected: state.rateLimit.detected,
       rateLimitLimit: state.rateLimit.limit,
-      firstBreachRequestId: state.rateLimit.firstBreachIndex,
-      safeSustainableRps: state.rateLimit.sustainableRps
+      firstBreachRequestId: state.rateLimit.firstBreachIndex
     },
     results: state.results
   };
@@ -1242,7 +1113,6 @@ function exportJson() {
   document.body.removeChild(link);
 }
 
-// Utilities
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }

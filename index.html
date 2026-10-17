@@ -16,13 +16,13 @@
         <div class="brand-icon">⚡</div>
         <div>
           <h1 class="brand-title">API Pulse & Rate-Limit Inspector</h1>
-          <p class="brand-subtitle">High-speed load generator, concurrency tester & quota breach detector</p>
+          <p class="brand-subtitle">Pure client-side high-speed API load tester & quota breach detector</p>
         </div>
       </div>
       <div class="header-actions">
-        <div id="proxy-status" class="status-indicator" title="Status of local proxy backend">
-          <span class="indicator-dot" id="server-dot"></span>
-          <span id="server-status-text">Checking Proxy...</span>
+        <div class="status-indicator" title="Runs 100% in your browser - zero background server needed">
+          <span class="indicator-dot"></span>
+          <span>Client-Side Engine Active</span>
         </div>
         <button id="theme-toggle" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
           🌙 Theme
@@ -33,9 +33,9 @@
     <!-- Quick Presets -->
     <div class="preset-bar">
       <span class="preset-title">Presets:</span>
-      <button class="preset-chip active" data-preset="mock-50">🎯 Mock Rate-Limit API (50 req/min limit)</button>
-      <button class="preset-chip" data-preset="json-get-100">📄 JSONPlaceholder (100 GET)</button>
-      <button class="preset-chip" data-preset="heavy-1000">🔥 1000 High-Throughput Burst</button>
+      <button class="preset-chip active" data-preset="json-get-100">📄 JSONPlaceholder (100 GET)</button>
+      <button class="preset-chip" data-preset="rate-limit-demo">🛡️ Rate-Limit 429 Detection Demo</button>
+      <button class="preset-chip" data-preset="heavy-1000">🔥 1,000 High-Throughput Burst</button>
       <button class="preset-chip" data-preset="post-echo">📤 POST Payload Echo</button>
     </div>
 
@@ -46,10 +46,10 @@
         <div class="card">
           <h2 class="card-title">
             <span>⚙️ Configuration</span>
-            <label class="toggle-switch" title="Proxy mode bypasses browser CORS limits and extracts all response headers">
-              <input type="checkbox" id="use-proxy" checked>
+            <label class="toggle-switch" title="Enable public CORS bypass if your target API blocks cross-origin browser requests">
+              <input type="checkbox" id="cors-proxy">
               <span class="switch-slider"></span>
-              <span style="font-size: 0.75rem; font-weight: 600;">Proxy Mode</span>
+              <span style="font-size: 0.75rem; font-weight: 600;">CORS Proxy</span>
             </label>
           </h2>
 
@@ -64,7 +64,7 @@
                 <option value="DELETE">DELETE</option>
                 <option value="HEAD">HEAD</option>
               </select>
-              <input type="url" id="target-url" class="text-input" placeholder="http://localhost:3000/api/mock-api?limit=50&window=60" value="http://localhost:3000/api/mock-api?limit=50&window=60" required>
+              <input type="url" id="target-url" class="text-input" placeholder="https://jsonplaceholder.typicode.com/posts/1" value="https://jsonplaceholder.typicode.com/posts/1" required>
             </div>
           </div>
 
@@ -93,7 +93,7 @@
               <input type="range" id="concurrency-slider" min="1" max="50" value="5">
             </div>
             <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">
-              Number of simultaneous in-flight requests
+              Number of simultaneous in-flight browser requests
             </div>
           </div>
 
@@ -124,7 +124,7 @@
           <div id="tab-headers" class="tab-pane active">
             <div id="headers-list">
               <div class="header-row">
-                <input type="text" class="text-input header-key" placeholder="Header Key (e.g. Content-Type)" value="Accept">
+                <input type="text" class="text-input header-key" placeholder="Key (e.g. Accept)" value="Accept">
                 <input type="text" class="text-input header-val" placeholder="Value" value="application/json">
                 <button type="button" class="btn-remove">&times;</button>
               </div>
@@ -147,7 +147,6 @@
           </div>
 
           <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
-            <button id="btn-reset-mock" class="btn btn-secondary" style="flex: 1; font-size: 0.75rem; padding: 0.4rem;">🔄 Reset Mock Limits</button>
             <button id="btn-clear" class="btn btn-secondary" style="flex: 1; font-size: 0.75rem; padding: 0.4rem;">🗑 Clear Results</button>
           </div>
         </div>
@@ -174,7 +173,7 @@
           </div>
         </div>
 
-        <!-- API Rate Limit & Quota Inspector (Hero Feature) -->
+        <!-- API Rate Limit & Quota Reach Inspector (Hero Feature) -->
         <div class="card rate-limit-card" id="rate-limit-card">
           <div class="rate-limit-header">
             <h2 class="card-title" style="margin-bottom: 0;">
@@ -339,7 +338,7 @@
     </div>
   </div>
 
-  <!-- Application Logic -->
+  <!-- Pure Client-side Application Logic -->
   <script src="app.js"></script>
 </body>
 </html>

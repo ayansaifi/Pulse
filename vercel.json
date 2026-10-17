@@ -1,9 +1,0 @@
-{
-  "version": 2,
-  "rewrites": [
-    { "source": "/api/proxy", "destination": "/api/proxy.js" },
-    { "source": "/api/mock-api/reset", "destination": "/api/mock-api.js?reset=true" },
-    { "source": "/api/mock-api", "destination": "/api/mock-api.js" },
-    { "source": "/(.*)", "destination": "/$1" }
-  ]
-}
