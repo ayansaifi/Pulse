@@ -1,0 +1,13 @@
+{
+  "name": "api-pulse-load-tester",
+  "version": "1.0.0",
+  "description": "High-speed API load generator, concurrency tester and rate-limit inspector",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["api", "load-testing", "stress-test", "rate-limit", "concurrency"],
+  "author": "",
+  "license": "MIT"
+}
