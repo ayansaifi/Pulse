@@ -49,23 +49,41 @@ A high-performance, developer-centric web dashboard for load-testing APIs, inspe
 
 ---
 
-## 🚀 Getting Started
+## ☁️ Deploying to Vercel
 
-### Method 1: Start the Server (Recommended - Zero Dependencies!)
+The project is pre-configured with `vercel.json` and Serverless functions inside `/api/` (`proxy.js` and `mock-api.js`).
 
-Since this uses pure Node.js standard libraries, no `npm install` is required!
+### Option A: Deploy via GitHub (Easiest)
+1. Push this folder to a new GitHub repository:
+   ```bash
+   git remote add origin https://github.com/<your-username>/<your-repo-name>.git
+   git branch -M main
+   git push -u origin main
+   ```
+2. Go to [vercel.com](https://vercel.com) and click **"Add New Project"**.
+3. Import your repository and click **Deploy** (no build settings or environment variables needed!).
+4. Your load tester is live at `https://<your-project>.vercel.app`!
 
-1. Open PowerShell or Terminal in this directory:
-   ```powershell
-   node server.js
-   ```
-2. Open your browser and navigate to:
-   ```
-   http://localhost:3000
-   ```
+### Option B: Deploy via Vercel CLI
+Run in this directory:
+```bash
+npx vercel
+```
+Follow the interactive prompts to deploy directly in seconds.
+
+---
+
+## 🚀 Running Locally
+
+### Method 1: Start the Local Server (Zero Dependencies!)
+Run:
+```powershell
+node server.js
+```
+Or double-click `start.bat`. Open your browser at `http://localhost:3000`.
 
 ### Method 2: Standalone Browser Mode
-You can also directly open `index.html` in your web browser. In Direct Mode, requests are executed via browser `fetch()`. (Note: Some 3rd-party servers restrict cross-origin headers without CORS).
+Directly open `index.html` in your web browser. In Direct Mode, requests are executed via browser `fetch()`.
 
 ---
 
