@@ -1,38 +1,23 @@
-# ⚡ API Pulse Pro - Client-Side Load Tester & Rate Limit Inspector
+# API Pulse
 
-A high-performance, developer-centric web application for testing API load, concurrency, and rate limits directly from your browser.
+A browser-based tool for exploring API response times, status codes and exposed rate-limit headers. It runs requests from the user's browser; it is not a distributed load-testing service.
 
-**Zero Backend Server Required** &bull; **Zero Dependencies** &bull; **Instant Vercel / GitHub Pages Deployment**
+## Run locally
 
-👉 **Live Demo**: [https://ayansaifi.github.io/api-tester/](https://ayansaifi.github.io/api-tester/)
+Serve this directory over HTTP or HTTPS and open `index.html`. Chart.js and the optional PDF library are loaded from external CDNs, so an internet connection is required. Clipboard sharing requires a secure context (HTTPS or localhost).
 
----
+## How it works
 
-## 🌟 Production Features
-- **Custom Request Volume**: Send 50, 100, 500, 1,000, 5,000, 10,000, or any custom volume.
-- **Worker Concurrency Pool**: Adjustable parallel workers (1 to 50 simultaneous browser connections).
-- **Throttling & Pacing Control**: Micro-delays (0ms to 1000ms) between requests.
-- **📄 Executive PDF Audit Report Generator**:
-  - Automatically compiles a multi-page, client-ready SLA benchmark PDF report.
-  - Computes SLA Performance Grade (Grade A+, A, B, C, F).
-  - Includes executive KPI table, tail-latency percentiles (p50, p90, p95, p99), rate limit breach autopsy, and status breakdown.
-- **📥 cURL Import**: Paste any cURL command from your terminal, Postman, or browser DevTools to auto-populate method, endpoint, headers, and body.
-- **🔗 Shareable Test Configurations**: 1-click share button serializes your test setup directly into a shareable URL link.
-- **Rate Limit & Quota Inspector**:
-  - Captures `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, and `Retry-After`.
-  - Quota depletion gauge and live countdown to reset.
-  - Pinpoints the exact request number (e.g. `Reached limit at Request #51`) where HTTP 429 occurred.
-  - Optional **Auto-stop on 429**.
-- **Real-Time Analytics & Charts**:
-  - Live throughput (Instant & Peak RPS).
-  - Tail latency percentiles: min, avg, max, p50 (median), p90, p95, p99.
-  - Interactive Chart.js charts: Latency scatter plot and status distribution donut.
-- **Payload & Variable Templating**: `{{id}}`, `{{timestamp}}`, `{{random}}`, `{{uuid}}` variables in JSON bodies with 1-click JSON Beautifier.
-- **CORS Proxy Toggle**: Optional toggle to route through a public CORS proxy when testing third-party APIs that do not enable cross-origin headers.
-- **1-Click Export**: Export full session to CSV, JSON, or Executive PDF.
+Configure an endpoint, request count, concurrency, delay, headers and optional body, then start a run. A request times out after 30 seconds. Stop cancels in-flight requests and waits for workers to finish. The 429 option halts further dispatches and cancels outstanding requests. Current and peak throughput count completions in a rolling one-second window; average throughput uses the run duration. Latency measures time to response headers, not full-body download time.
 
----
+Only test endpoints you are authorized to test. Browser connection limits, CORS, preflight requests, network conditions and the user's device affect results. Browsers can only expose rate-limit headers permitted by the target's CORS policy. Missing headers do not mean a limit does not exist. Results should not be used as a substitute for a controlled, server-side load test.
 
-## 💻 Run Locally
+## Sensitive data
 
-Simply double-click `index.html` to open it in any web browser! No Node.js server or installation needed.
+Share links include only method, volume, concurrency and delay. They do not include the endpoint, headers or body. Do not put secrets in URLs. Enabling the optional third-party CORS proxy sends the request and its data to that service; use it only if you trust that service with the data. Exported results can contain endpoint URLs, response headers and response snippets; handle them as sensitive data.
+
+The PDF's grade uses fixed illustrative thresholds; it is not an agreed SLA or a certification. Rate-limit reset values are interpreted heuristically and may vary by API.
+
+## Verify
+
+Run `node tests/run.js` for focused checks of sharing, validation and cancellation. This does not replace browser compatibility, accessibility, security or real-network testing.

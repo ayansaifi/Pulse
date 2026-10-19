@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,40 +15,43 @@
     <!-- Production Navbar -->
     <header class="app-header">
       <div class="brand-group">
-        <div class="brand-logo">⚡</div>
+        <div class="brand-logo" aria-hidden="true"><span></span><span></span><span></span></div>
         <div class="brand-text">
           <h1>
-            <span>API Pulse Pro</span>
-            <span class="brand-badge">SaaS Edition</span>
+            <span>pulse<span class="brand-period">.</span></span>
           </h1>
-          <p>High-concurrency load generator, tail-latency analyzer & rate-limit breach detector</p>
+          <p>API performance workspace</p>
         </div>
       </div>
       <div class="header-tools">
         <div class="status-pill" title="Runs 100% in your browser - no servers or signups required">
           <span class="status-dot" id="system-dot"></span>
-          <span id="system-status-text">Client-Side Engine Active</span>
+          <span id="system-status-text">Engine ready</span>
         </div>
         <button id="btn-open-curl" class="btn-secondary" title="Import cURL command directly">
-          📥 Import cURL
+          Import cURL
         </button>
         <button id="btn-share-config" class="btn-secondary" title="Share test configuration via link">
-          🔗 Share Config
+          Share configuration
         </button>
         <button id="theme-toggle" class="btn-secondary" title="Toggle Dark/Light theme">
-          🌙 Theme
+          Theme
         </button>
       </div>
     </header>
 
+    <div class="workspace-heading"><div><div class="eyebrow">WORKSPACE / LOAD TESTING</div><h2>API performance</h2><p>Configure a test and inspect how your endpoint responds under load.</p></div><div class="workspace-label"><span></span> Browser-based testing</div></div>
+
+    <div class="workspace-heading"><div><div class="eyebrow">WORKSPACE / LOAD TESTING</div><h2>API performance</h2><p>Configure a test and inspect how your endpoint responds under load.</p></div><div class="workspace-label"><span></span> Browser-based testing</div></div>
+
     <!-- Quick Presets Launchpad -->
     <div class="preset-container">
-      <span class="preset-label">🎯 Presets:</span>
-      <button class="preset-tag active" data-preset="json-get-100">📄 JSONPlaceholder (100 GET)</button>
-      <button class="preset-tag" data-preset="rate-limit-demo">🛡️ Rate-Limit 429 Breaker Demo</button>
-      <button class="preset-tag" data-preset="burst-1000">🔥 1,000 Burst Benchmark</button>
-      <button class="preset-tag" data-preset="stress-5000">⚡ 5,000 High-Capacity Stress</button>
-      <button class="preset-tag" data-preset="post-echo">📤 POST Payload Benchmark</button>
+      <span class="preset-label">Quick start</span>
+      <button class="preset-tag active" data-preset="json-get-100">Sample API</button>
+      <button class="preset-tag" data-preset="rate-limit-demo">Rate limit demo</button>
+      <button class="preset-tag" data-preset="burst-1000">1,000 requests</button>
+      <button class="preset-tag" data-preset="stress-5000">5,000 requests</button>
+      <button class="preset-tag" data-preset="post-echo">POST request</button>
     </div>
 
     <!-- Main Workspace Grid -->
@@ -57,7 +60,7 @@
       <aside class="sidebar-workspace">
         <div class="panel-card">
           <div class="panel-title">
-            <span class="panel-title-text">⚙️ Test Configuration</span>
+            <span class="panel-title-text">Test configuration</span>
             <label class="custom-switch" title="Toggle public CORS proxy if the target API restricts browser cross-origin calls">
               <input type="checkbox" id="cors-proxy">
               <span class="switch-track"></span>
@@ -87,7 +90,7 @@
           <!-- Total Requests Input -->
           <div class="form-field">
             <div class="field-label">
-              <span>Total Request Volume</span>
+              <span>Total requests</span>
               <span id="request-count-display" style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-primary);">100</span>
             </div>
             <input type="number" id="total-requests" class="ui-input" value="100" min="1" max="50000">
@@ -104,7 +107,7 @@
           <!-- Concurrency Workers Slider -->
           <div class="form-field">
             <div class="field-label">
-              <span>Parallel Workers (Concurrency)</span>
+              <span>Concurrent workers</span>
               <span id="concurrency-val" class="slider-badge">5</span>
             </div>
             <div class="slider-wrap">
@@ -118,7 +121,7 @@
           <!-- Micro Delay Throttle Slider -->
           <div class="form-field">
             <div class="field-label">
-              <span>Inter-Request Delay (Pacing)</span>
+              <span>Request delay</span>
               <span id="delay-val" class="slider-badge">0ms</span>
             </div>
             <div class="slider-wrap">
@@ -132,7 +135,7 @@
               <input type="checkbox" id="stop-on-429" checked>
               <span class="switch-track"></span>
               <span style="font-size: 0.785rem; font-weight: 600; color: var(--text-secondary);">
-                Auto-Halt on Rate Limit Breach (HTTP 429)
+                Stop automatically on HTTP 429
               </span>
             </label>
           </div>
@@ -140,8 +143,8 @@
           <!-- Request Details Subtabs -->
           <div class="subtabs-bar">
             <button class="subtab-btn active" data-tab="tab-headers">Headers (<span id="header-count">1</span>)</button>
-            <button class="subtab-btn" data-tab="tab-body">Body Payload</button>
-            <button class="subtab-btn" data-tab="tab-auth">Auth Presets</button>
+            <button class="subtab-btn" data-tab="tab-body">Body</button>
+            <button class="subtab-btn" data-tab="tab-auth">Authentication</button>
           </div>
 
           <!-- Headers View -->
@@ -167,24 +170,24 @@
             </div>
           </div>
 
-          <!-- Auth Presets View -->
+          <!-- Authentication View -->
           <div id="tab-auth" class="subtab-view">
             <div class="form-field">
-              <label class="field-label">Authorization Token (Bearer)</label>
-              <input type="text" id="auth-bearer-token" class="ui-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+              <label class="field-label">Authorization token (Bearer)</label>
+              <input type="password" id="auth-bearer-token" class="ui-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
             </div>
             <button id="btn-apply-auth" class="btn-secondary" style="width: 100%; justify-content: center;">Apply to Headers</button>
           </div>
 
           <!-- Primary Execution Controls -->
           <div class="controls-grid">
-            <button id="btn-start" class="btn-cta btn-start">▶ Start Test</button>
-            <button id="btn-pause" class="btn-cta btn-pause" disabled>⏸ Pause</button>
-            <button id="btn-stop" class="btn-cta btn-stop" disabled>⏹ Stop</button>
+            <button id="btn-start" class="btn-cta btn-start">Start test</button>
+            <button id="btn-pause" class="btn-cta btn-pause" disabled>Pause</button>
+            <button id="btn-stop" class="btn-cta btn-stop" disabled>Stop</button>
           </div>
 
           <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
-            <button id="btn-clear" class="btn-secondary" style="flex: 1; justify-content: center;">🗑 Clear Run Data</button>
+            <button id="btn-clear" class="btn-secondary" style="flex: 1; justify-content: center;">Clear results</button>
           </div>
         </div>
       </aside>
@@ -195,7 +198,7 @@
         <div class="panel-card progress-banner">
           <div class="progress-header-info">
             <div>
-              <strong>Test Status:</strong> <span id="status-badge" style="color: var(--text-muted); font-weight: 700;">Idle</span>
+              <strong>Run status</strong> <span class="status-separator">/</span> <span id="status-badge" style="color: var(--text-muted); font-weight: 700;">Idle</span>
             </div>
             <div id="progress-percent" style="font-family: var(--font-mono); font-weight: 800; font-size: 1.1rem;">0%</div>
           </div>
@@ -203,11 +206,11 @@
             <div id="progress-fill" class="progress-bar-fill"></div>
           </div>
           <div class="progress-meta-row">
-            <div class="meta-item">Processed: <strong id="stat-completed">0</strong> / <span id="stat-total">100</span></div>
-            <div class="meta-item">In-Flight Workers: <strong id="stat-active-workers">0</strong></div>
+            <div class="meta-item">Completed: <strong id="stat-completed">0</strong> / <span id="stat-total">100</span></div>
+            <div class="meta-item">Active workers: <strong id="stat-active-workers">0</strong></div>
             <div class="meta-item">Duration: <strong id="stat-elapsed">0.0s</strong></div>
             <div class="meta-item">ETA: <strong id="stat-eta">--</strong></div>
-            <div class="meta-item">Current Speed: <strong id="stat-instant-rps" style="color: var(--info);">0.0 RPS</strong></div>
+            <div class="meta-item">Current rate: <strong id="stat-instant-rps" style="color: var(--info);">0.0 RPS</strong></div>
           </div>
         </div>
 
@@ -215,10 +218,10 @@
         <div class="panel-card shield-panel" id="rate-limit-panel">
           <div class="panel-title" style="margin-bottom: 0;">
             <span class="panel-title-text">
-              <span>🛡️ Rate Limit & Quota Reach Inspector</span>
+              <span>Rate limits</span>
             </span>
             <span id="rate-limit-badge" class="status-tag" style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); color: var(--text-muted);">
-              Awaiting Requests...
+              Waiting for data
             </span>
           </div>
 
@@ -237,11 +240,11 @@
             </div>
             <div class="quota-stat-box">
               <div id="rl-breach-req" class="quota-stat-value" style="color: var(--danger);">--</div>
-              <div class="quota-stat-title">First Breach Req</div>
+              <div class="quota-stat-title">First breach</div>
             </div>
             <div class="quota-stat-box">
               <div id="rl-sustainable-rps" class="quota-stat-value" style="color: var(--success);">--</div>
-              <div class="quota-stat-title">Safe Sustainable RPS</div>
+              <div class="quota-stat-title">Sustainable RPS (unknown)</div>
             </div>
           </div>
 
@@ -256,7 +259,7 @@
         <div class="kpi-grid">
           <div class="kpi-card green">
             <div class="kpi-caption">Success Rate</div>
-            <div id="m-success-rate" class="kpi-number" style="color: var(--success);">100%</div>
+            <div id="m-success-rate" class="kpi-number" style="color: var(--success);">—</div>
             <div class="kpi-footnote"><span id="m-2xx">0</span> HTTP 2xx</div>
           </div>
           <div class="kpi-card amber">
@@ -290,7 +293,7 @@
         <div class="charts-row">
           <div class="panel-card">
             <h3 class="panel-title">
-              <span class="panel-title-text">📈 Response Latency & Quota Depletion</span>
+              <span class="panel-title-text">Response latency</span>
             </h3>
             <div class="chart-viewport">
               <canvas id="latencyChart"></canvas>
@@ -298,7 +301,7 @@
           </div>
           <div class="panel-card">
             <h3 class="panel-title">
-              <span class="panel-title-text">🍩 Status Distribution</span>
+              <span class="panel-title-text">Response status</span>
             </h3>
             <div class="chart-viewport">
               <canvas id="statusChart"></canvas>
@@ -310,7 +313,7 @@
         <div class="panel-card">
           <div class="table-toolbar">
             <h3 class="panel-title" style="margin-bottom: 0;">
-              <span>📜 Request Logs (<span id="log-count">0</span>)</span>
+              <span>Request log (<span id="log-count">0</span>)</span>
             </h3>
             <div class="filter-group">
               <button class="filter-chip active" data-filter="all">All</button>
@@ -322,10 +325,10 @@
             </div>
             <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
               <button id="btn-generate-pdf" class="btn-secondary" style="background: var(--accent-gradient); color: white; border: none; font-weight: 700;">
-                📄 Generate PDF Report
+                PDF report
               </button>
-              <button id="btn-export-csv" class="btn-secondary">⬇ CSV</button>
-              <button id="btn-export-json" class="btn-secondary">⬇ JSON</button>
+              <button id="btn-export-csv" class="btn-secondary">CSV</button>
+              <button id="btn-export-json" class="btn-secondary">JSON</button>
             </div>
           </div>
 
@@ -345,7 +348,7 @@
               <tbody id="logs-tbody">
                 <tr>
                   <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
-                    No requests dispatched yet. Select a preset or configure an endpoint and click <strong>▶ Start Test</strong>.
+                    Your request log will appear here after you start a test.
                   </td>
                 </tr>
               </tbody>
@@ -360,7 +363,7 @@
   <div id="curl-modal" class="modal-backdrop">
     <div class="modal-card">
       <div class="modal-head">
-        <h3>📥 Import cURL Command</h3>
+        <h3>Import cURL Command</h3>
         <button id="btn-close-curl" class="modal-close-btn">&times;</button>
       </div>
       <div style="margin-bottom: 1rem;">
@@ -422,7 +425,7 @@
           <div class="pdf-brand-title">⚡ API Pulse Performance & Rate-Limit Audit</div>
           <div style="font-size: 0.85rem; color: #64748b; margin-top: 0.25rem;">Automated Service Level & Throughput Benchmark Report</div>
         </div>
-        <div id="pdf-sla-grade" class="pdf-badge-sla sla-grade-a">SLA: GRADE A</div>
+        <div id="pdf-sla-grade" class="pdf-badge-sla sla-grade-a">Illustrative grade</div>
       </div>
 
       <table class="pdf-meta-table">
@@ -466,7 +469,7 @@
           <tr>
             <th>Metric</th>
             <th>Response Time</th>
-            <th>Industry SLA Benchmark</th>
+            <th>Illustrative benchmark</th>
             <th>Compliance Status</th>
           </tr>
         </thead>

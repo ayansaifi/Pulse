@@ -23,6 +23,10 @@ const state = {
   startTime: null,
   elapsedInterval: null,
   peakRps: 0,
+  endTime: null,
+  controller: null,
+  rateSamples: [],
+  runConfig: null,
   results: [],
   
   // Rate Limit Analytics
@@ -173,6 +177,7 @@ const DOM = {
 // Bootstrap App
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
+  if (typeof Chart === 'undefined') { DOM.statusBadge.textContent = 'Charts unavailable; reload'; DOM.btnStart.disabled = true; return; }
   initCharts();
   loadSharedConfig();
   bindEvents();
@@ -180,9 +185,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Theme Management
 function initTheme() {
-  const saved = localStorage.getItem('api-pulse-theme') || 'dark';
+  const saved = localStorage.getItem('api-pulse-theme') || 'light';
   document.documentElement.setAttribute('data-theme', saved);
-  DOM.themeToggle.textContent = saved === 'dark' ? '🌙 Dark' : '☀️ Light';
+  DOM.themeToggle.textContent = saved === 'dark' ? 'Light mode' : 'Dark mode';
 }
 
 DOM.themeToggle.addEventListener('click', () => {
@@ -190,7 +195,7 @@ DOM.themeToggle.addEventListener('click', () => {
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('api-pulse-theme', next);
-  DOM.themeToggle.textContent = next === 'dark' ? '🌙 Dark' : '☀️ Light';
+  DOM.themeToggle.textContent = next === 'dark' ? 'Light mode' : 'Dark mode';
   
   updateChartsTheme(next === 'dark');
 });
@@ -223,8 +228,8 @@ function initCharts() {
         {
           label: 'Latency (ms)',
           data: [],
-          borderColor: '#6366f1',
-          backgroundColor: 'rgba(99, 102, 241, 0.08)',
+          borderColor: '#397e77',
+          backgroundColor: 'rgba(57, 126, 119, 0.08)',
           pointBackgroundColor: [],
           pointRadius: 2.5,
           pointHoverRadius: 5,
@@ -426,9 +431,10 @@ function bindEvents() {
       row.className = 'header-item';
       row.innerHTML = `
         <input type="text" class="ui-input header-key" value="Authorization">
-        <input type="text" class="ui-input header-val" value="Bearer ${token}">
+        <input type="text" class="ui-input header-val">
         <button type="button" class="btn-icon-danger">&times;</button>
       `;
+      row.querySelector('.header-val').value = `Bearer ${token}`;
       DOM.headersList.appendChild(row);
       updateHeaderCount();
     }
@@ -644,22 +650,19 @@ function parseCurlCommand() {
 
 // Share Configuration via URL
 function shareConfiguration() {
+  // URLs, headers and bodies may contain secrets. Only share non-sensitive settings.
   const config = {
     method: DOM.httpMethod.value,
-    url: DOM.targetUrl.value,
     req: DOM.totalRequestsInput.value,
     con: DOM.concurrencySlider.value,
-    del: DOM.delaySlider.value,
-    body: DOM.requestBody.value,
-    headers: getHeadersFromUI()
+    del: DOM.delaySlider.value
   };
-
   const encoded = encodeURIComponent(JSON.stringify(config));
   const shareUrl = `${window.location.origin}${window.location.pathname}#config=${encoded}`;
 
   navigator.clipboard.writeText(shareUrl).then(() => {
-    alert('Test configuration copied to clipboard as a shareable link!');
-  });
+    alert('Settings copied. The endpoint, headers and body were excluded to protect sensitive data.');
+  }).catch(() => alert('Could not copy the link. Check browser clipboard permissions.'));
 }
 
 function loadSharedConfig() {
@@ -715,6 +718,13 @@ async function startTest() {
     return;
   }
 
+  if (state.isRunning) return;
+  let parsedUrl;
+  try { parsedUrl = new URL(rawUrl); } catch { alert('Enter a valid HTTP or HTTPS URL.'); return; }
+  if (!['http:', 'https:'].includes(parsedUrl.protocol) || parsedUrl.username || parsedUrl.password) { alert('Use an HTTP or HTTPS URL without embedded credentials.'); return; }
+  const requested = Number(DOM.totalRequestsInput.value), concurrency = Number(DOM.concurrencySlider.value), delay = Number(DOM.delaySlider.value);
+  if (!Number.isInteger(requested) || requested < 1 || requested > 50000 || !Number.isInteger(concurrency) || concurrency < 1 || concurrency > 50 || !Number.isFinite(delay) || delay < 0 || delay > 1000) { alert('Enter 1–50,000 requests, 1–50 workers and a delay of 0–1,000 ms.'); return; }
+  if (DOM.corsProxyToggle.checked && !confirm('Requests, including headers and body, will be sent through the third-party corsproxy.io service. Continue only if you trust it with this data.')) return;
   // Reset Run State
   state.isRunning = true;
   state.isPaused = false;
@@ -730,6 +740,10 @@ async function startTest() {
   state.activeWorkers = 0;
   state.results = [];
   state.startTime = Date.now();
+  state.endTime = null;
+  state.controller = new AbortController();
+  state.rateSamples = [];
+  state.runConfig = { url: rawUrl, method: DOM.httpMethod.value, concurrency: state.concurrency, delay: state.delayMs };
   state.peakRps = 0;
 
   // Reset Rate Limit State
@@ -767,6 +781,13 @@ async function startTest() {
   DOM.rlSustainableRps.textContent = '--';
 
   resetCharts();
+  DOM.mSuccessRate.textContent = '—';
+  DOM.m2xx.textContent = DOM.m429.textContent = DOM.mErrors.textContent = DOM.m4xx.textContent = DOM.m5xx.textContent = '0';
+  DOM.mRps.textContent = DOM.mPeakRps.textContent = '0.0';
+  DOM.mLatencyAvg.textContent = '0ms';
+  DOM.mLatencyMin.textContent = DOM.mLatencyMax.textContent = '0';
+  DOM.mLatencyP95.textContent = '-- / -- / --';
+  DOM.m429Pct.textContent = '0% of total';
   renderLogsTable();
 
   if (state.elapsedInterval) clearInterval(state.elapsedInterval);
@@ -812,11 +833,16 @@ async function runWorker(workerId, url, method, headers, bodyTemplate) {
     }
 
     const result = await executeSingleRequest(reqNum, url, method, headers, processedBody);
+    if (!result) break;
     state.results.push(result);
+    const completedAt = Date.now();
+    state.rateSamples.push(completedAt);
+    state.rateSamples = state.rateSamples.filter(t => t > completedAt - 1000);
+    state.peakRps = Math.max(state.peakRps, state.rateSamples.length);
+    DOM.mPeakRps.textContent = state.peakRps.toFixed(1);
     state.completedCount++;
 
     inspectRateLimit(result);
-    updateMetricsUI();
     addChartDataPoint(result);
 
     // Stop on 429
@@ -842,11 +868,12 @@ async function executeSingleRequest(id, url, method, headers, body) {
     targetUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
   }
 
+  const timeout = new AbortController();
+  const abort = () => timeout.abort();
+  state.controller.signal.addEventListener('abort', abort, { once: true });
+  const timer = setTimeout(abort, 30000);
   try {
-    const fetchOpts = {
-      method: method,
-      headers: headers
-    };
+    const fetchOpts = { method, headers, signal: timeout.signal };
     if (body && ['POST', 'PUT', 'PATCH'].includes(method)) {
       fetchOpts.body = body;
     }
@@ -868,9 +895,11 @@ async function executeSingleRequest(id, url, method, headers, body) {
     try {
       textSnippet = (await response.text()).slice(0, 3000);
     } catch (e) {
+      if (timeout.signal.aborted) throw e;
       textSnippet = '(Body not readable)';
     }
 
+    if (state.controller.signal.aborted) return null;
     return {
       id: id,
       timestamp: new Date().toLocaleTimeString(),
@@ -885,6 +914,7 @@ async function executeSingleRequest(id, url, method, headers, body) {
       isError: false
     };
   } catch (err) {
+    if (state.controller.signal.aborted) return null;
     const duration = Math.round(performance.now() - reqStart);
     const isCors = err.message && err.message.toLowerCase().includes('failed to fetch');
     return {
@@ -893,13 +923,16 @@ async function executeSingleRequest(id, url, method, headers, body) {
       method: method,
       url: url,
       status: 0,
-      statusText: isCors ? 'CORS / Network Error' : (err.message || 'Error'),
+      statusText: err.name === 'AbortError' ? 'Timeout' : (isCors ? 'CORS / Network Error' : (err.message || 'Error')),
       duration: duration,
       headers: {},
       rateLimitHeaders: {},
-      bodySnippet: isCors ? 'Request blocked by browser CORS policy. Toggle "CORS Proxy" in settings to bypass.' : err.message,
+      bodySnippet: err.name === 'AbortError' ? 'Request timed out after 30 seconds.' : (isCors ? 'Network request failed; the browser may have blocked it due to CORS.' : err.message),
       isError: true
     };
+  } finally {
+    clearTimeout(timer);
+    state.controller.signal.removeEventListener('abort', abort);
   }
 }
 
@@ -946,11 +979,7 @@ function inspectRateLimit(result) {
       DOM.rlReset.textContent = `${secondsLeft}s`;
       startResetCountdown(secondsLeft);
 
-      if (state.rateLimit.limit && secondsLeft > 0) {
-        const safeRps = (state.rateLimit.limit / Math.max(1, secondsLeft)).toFixed(2);
-        state.rateLimit.sustainableRps = safeRps;
-        DOM.rlSustainableRps.textContent = `${safeRps}/s`;
-      }
+
     }
 
     DOM.rateLimitBadge.textContent = 'Rate Limit Headers Detected';
@@ -958,7 +987,7 @@ function inspectRateLimit(result) {
   }
 
   // Detect Limit Breach
-  if ((result.status === 429 || state.rateLimit.remaining === 0) && !state.rateLimit.firstBreachIndex) {
+  if (result.status === 429 && !state.rateLimit.firstBreachIndex) {
     state.rateLimit.firstBreachIndex = result.id;
     state.rateLimit.firstBreachTime = new Date().toLocaleTimeString();
     
@@ -982,8 +1011,7 @@ function startResetCountdown(initialSeconds) {
     if (remaining <= 0) {
       clearInterval(state.resetTimerInterval);
       DOM.rlReset.textContent = '0s (Reset)';
-      DOM.rateLimitBadge.textContent = 'Quota Refreshed';
-      DOM.rateLimitBadge.className = 'status-tag status-2xx';
+      DOM.rateLimitBadge.textContent = 'Reset time elapsed';
     } else {
       DOM.rlReset.textContent = `${remaining}s`;
     }
@@ -992,6 +1020,7 @@ function startResetCountdown(initialSeconds) {
 
 function triggerRateLimitStop(reqNum) {
   state.isStopped = true;
+  state.controller.abort();
   DOM.statusBadge.textContent = 'Halted (429 Hit)';
   DOM.statusBadge.style.color = 'var(--warning)';
   DOM.rateLimitBanner.style.display = 'flex';
@@ -1002,15 +1031,18 @@ function triggerRateLimitStop(reqNum) {
 // Elapsed Time, ETA, and Instantaneous RPS
 function updateElapsedAndEta() {
   if (!state.startTime) return;
-  const elapsedSec = (Date.now() - state.startTime) / 1000;
+  const now = Date.now();
+  const elapsedSec = (now - state.startTime) / 1000;
   DOM.statElapsed.textContent = `${elapsedSec.toFixed(1)}s`;
 
   if (state.completedCount > 0 && state.isRunning) {
+    state.rateSamples = state.rateSamples.filter(t => t > now - 1000);
     const rate = state.completedCount / Math.max(0.1, elapsedSec);
-    DOM.statInstantRps.textContent = `${rate.toFixed(1)} RPS`;
+    const currentRate = state.rateSamples.length;
+    DOM.statInstantRps.textContent = `${currentRate.toFixed(1)} RPS`;
     
-    if (rate > state.peakRps) {
-      state.peakRps = rate;
+    if (currentRate > state.peakRps) {
+      state.peakRps = currentRate;
       DOM.mPeakRps.textContent = state.peakRps.toFixed(1);
     }
 
@@ -1022,6 +1054,8 @@ function updateElapsedAndEta() {
       DOM.statEta.textContent = '0s';
     }
   }
+  updateMetricsUI();
+  renderLogsTable();
 }
 
 function updateProgressUI() {
@@ -1066,7 +1100,7 @@ function updateMetricsUI() {
   DOM.m4xx.textContent = count4xx.toLocaleString();
   DOM.m5xx.textContent = (count5xx + countFail).toLocaleString();
 
-  const elapsedSec = Math.max(0.1, (Date.now() - state.startTime) / 1000);
+  const elapsedSec = Math.max(0.1, ((state.endTime || Date.now()) - state.startTime) / 1000);
   const rps = (total / elapsedSec).toFixed(1);
   DOM.mRps.textContent = rps;
 
@@ -1082,7 +1116,7 @@ function updateMetricsUI() {
   DOM.mLatencyAvg.textContent = `${avg}ms`;
   DOM.mLatencyMin.textContent = min;
   DOM.mLatencyMax.textContent = max;
-  DOM.mLatencyP95.textContent = `${p50}/${p90}/${p99}ms`;
+  DOM.mLatencyP95.textContent = `${p50}/${p95}/${p99}ms`;
 
   statusChart.data.datasets[0].data = [count2xx, count429, count4xx, count5xx, countFail];
   statusChart.update('none');
@@ -1144,13 +1178,16 @@ function togglePause() {
 
 function stopTest() {
   state.isStopped = true;
-  DOM.statusBadge.textContent = 'Terminated';
+  DOM.statusBadge.textContent = 'Stopping…';
   DOM.statusBadge.style.color = 'var(--danger)';
-  finishTest();
+  DOM.btnStop.disabled = true;
+  state.controller.abort();
 }
 
 function finishTest() {
+  state.endTime = Date.now();
   state.isRunning = false;
+  if (state.isStopped && DOM.statusBadge.textContent === 'Stopping…') DOM.statusBadge.textContent = 'Stopped';
   if (state.elapsedInterval) clearInterval(state.elapsedInterval);
   DOM.systemDot.className = 'status-dot';
   
@@ -1164,6 +1201,7 @@ function finishTest() {
   }
 
   updateMetricsUI();
+  DOM.statInstantRps.textContent = '0.0 RPS';
   latencyChart.update();
   renderLogsTable();
 }
@@ -1186,7 +1224,7 @@ function clearAll() {
   DOM.statusBadge.style.color = 'var(--text-muted)';
 
   DOM.rateLimitPanel.classList.remove('breached');
-  DOM.rateLimitBadge.textContent = 'Awaiting Requests...';
+  DOM.rateLimitBadge.textContent = 'Waiting for data';
   DOM.rateLimitBadge.className = 'status-tag';
   DOM.rateLimitBanner.style.display = 'none';
   DOM.rlLimit.textContent = '--';
@@ -1195,7 +1233,7 @@ function clearAll() {
   DOM.rlBreachReq.textContent = '--';
   DOM.rlSustainableRps.textContent = '--';
 
-  DOM.mSuccessRate.textContent = '100%';
+  DOM.mSuccessRate.textContent = '—';
   DOM.m2xx.textContent = '0';
   DOM.m429.textContent = '0';
   DOM.m429Pct.textContent = '0% of total';
@@ -1260,7 +1298,7 @@ function renderLogsTable() {
       <tr>
         <td>#${item.id}</td>
         <td><strong style="color: var(--text-primary);">${item.method}</strong></td>
-        <td><span class="status-tag ${badgeClass}">${item.status || 'ERR'} ${item.statusText || ''}</span></td>
+        <td><span class="status-tag ${badgeClass}">${item.status || 'ERR'} ${escapeHtml(item.statusText || '')}</span></td>
         <td class="${latencyClass}"><strong>${item.duration}ms</strong></td>
         <td>${remainingQuota}</td>
         <td style="color: var(--text-muted); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
@@ -1379,12 +1417,12 @@ async function generatePdfReport() {
     }
 
     // Populate PDF Template DOM
-    DOM.pdfSlaGrade.textContent = `SLA: ${grade}`;
+    DOM.pdfSlaGrade.textContent = `Illustrative: ${grade}`;
     DOM.pdfSlaGrade.className = `pdf-badge-sla ${gradeClass}`;
-    DOM.pdfTargetUrl.textContent = DOM.targetUrl.value;
+    DOM.pdfTargetUrl.textContent = state.runConfig.url;
     DOM.pdfTimestamp.textContent = new Date().toLocaleString();
-    DOM.pdfMethod.textContent = DOM.httpMethod.value;
-    DOM.pdfConcurrency.textContent = `${DOM.concurrencySlider.value} workers (Delay: ${DOM.delaySlider.value}ms)`;
+    DOM.pdfMethod.textContent = state.runConfig.method;
+    DOM.pdfConcurrency.textContent = `${state.runConfig.concurrency} workers (Delay: ${state.runConfig.delay}ms)`;
 
     DOM.pdfTotalRequests.textContent = total.toLocaleString();
     DOM.pdfSuccessRate.textContent = `${successRate}%`;
@@ -1399,9 +1437,9 @@ async function generatePdfReport() {
     DOM.pdfLatMax.textContent = `${max} ms`;
 
     DOM.pdfRlDetected.textContent = state.rateLimit.detected ? 'Active (X-RateLimit Headers Found)' : 'None Detected on Target';
-    DOM.pdfRlLimit.textContent = state.rateLimit.limit ? `${state.rateLimit.limit} req / window` : 'Not Enforced';
+    DOM.pdfRlLimit.textContent = state.rateLimit.limit ? `${state.rateLimit.limit} req / window` : 'Not detected';
     DOM.pdfRlBreach.textContent = state.rateLimit.firstBreachIndex ? `Hit at Request #${state.rateLimit.firstBreachIndex} (${state.rateLimit.firstBreachTime})` : 'Zero Breaches Detected';
-    DOM.pdfRlSafeRps.textContent = state.rateLimit.sustainableRps ? `${state.rateLimit.sustainableRps} requests/sec` : 'Unlimited / Not Detected';
+    DOM.pdfRlSafeRps.textContent = state.rateLimit.sustainableRps ? `${state.rateLimit.sustainableRps} requests/sec` : 'Not detected';
     DOM.pdfRlCount.textContent = `${count429} lockout responses (${((count429/total)*100).toFixed(1)}%)`;
 
     // Status breakdown rows
@@ -1490,11 +1528,11 @@ function exportCsv() {
     const rl = r.rateLimitHeaders || {};
     rows.push([
       r.id,
-      `"${r.timestamp}"`,
+      r.timestamp,
       r.method,
-      `"${r.url}"`,
+      r.url,
       r.status,
-      `"${r.statusText || ''}"`,
+      r.statusText || '',
       r.duration,
       rl['x-ratelimit-remaining'] || '',
       rl['x-ratelimit-limit'] || '',
@@ -1502,7 +1540,7 @@ function exportCsv() {
     ]);
   });
 
-  const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(',')).join("\n");
+  const csvContent = "data:text/csv;charset=utf-8," + rows.map(row => row.map(value => { const text = String(value ?? ''); const safe = /^[=+@\-\t\r]/.test(text) ? "'" + text : text; return '"' + safe.replace(/"/g, '""') + '"'; }).join(',')).join("\n");
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement('a');
   link.setAttribute('href', encodedUri);
