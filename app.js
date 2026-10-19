@@ -1,30 +1,31 @@
 /**
- * API Pulse - Pure Client-Side Stress Tester & Rate Limit Inspector
- * 100% Browser Executed - Zero Background Server Required
+ * API Pulse Pro - Client-Side Observability & Load Testing Engine
+ * 100% Browser Executed & Production Ready
  */
 
-// Application State
+// Application Global State
 const state = {
   isRunning: false,
   isPaused: false,
   isStopped: false,
   
-  // Test Config
+  // Test Configuration
   totalRequests: 100,
   concurrency: 5,
   delayMs: 0,
   stopOn429: true,
   useCorsProxy: false,
   
-  // Tracking
+  // Execution Counters & Timing
   requestIndex: 0,
   completedCount: 0,
   activeWorkers: 0,
   startTime: null,
   elapsedInterval: null,
+  peakRps: 0,
   results: [],
   
-  // Rate Limit Stats
+  // Rate Limit Analytics
   rateLimit: {
     detected: false,
     limit: null,
@@ -36,22 +37,27 @@ const state = {
     sustainableRps: null
   },
   
-  // UI filter
+  // Filter for Request Table
   filter: 'all',
   
-  // Countdown Timer
+  // Dynamic Timers
   resetTimerInterval: null
 };
 
-// Charts instances
+// Chart instances
 let latencyChart = null;
 let statusChart = null;
 
-// DOM Elements Cache
+// DOM Cache
 const DOM = {
   themeToggle: document.getElementById('theme-toggle'),
-  corsProxyToggle: document.getElementById('cors-proxy'),
+  btnOpenCurl: document.getElementById('btn-open-curl'),
+  btnShareConfig: document.getElementById('btn-share-config'),
+  systemDot: document.getElementById('system-dot'),
+  systemStatusText: document.getElementById('system-status-text'),
   
+  // Config
+  corsProxyToggle: document.getElementById('cors-proxy'),
   httpMethod: document.getElementById('http-method'),
   targetUrl: document.getElementById('target-url'),
   totalRequestsInput: document.getElementById('total-requests'),
@@ -62,16 +68,22 @@ const DOM = {
   delayVal: document.getElementById('delay-val'),
   stopOn429: document.getElementById('stop-on-429'),
   
+  // Headers & Body
   headersList: document.getElementById('headers-list'),
   btnAddHeader: document.getElementById('btn-add-header'),
   headerCount: document.getElementById('header-count'),
   requestBody: document.getElementById('request-body'),
+  btnBeautifyJson: document.getElementById('btn-beautify-json'),
+  authBearerToken: document.getElementById('auth-bearer-token'),
+  btnApplyAuth: document.getElementById('btn-apply-auth'),
   
+  // Primary Buttons
   btnStart: document.getElementById('btn-start'),
   btnPause: document.getElementById('btn-pause'),
   btnStop: document.getElementById('btn-stop'),
   btnClear: document.getElementById('btn-clear'),
   
+  // Progress Banner
   statusBadge: document.getElementById('status-badge'),
   progressPercent: document.getElementById('progress-percent'),
   progressFill: document.getElementById('progress-fill'),
@@ -80,9 +92,10 @@ const DOM = {
   statActiveWorkers: document.getElementById('stat-active-workers'),
   statElapsed: document.getElementById('stat-elapsed'),
   statEta: document.getElementById('stat-eta'),
+  statInstantRps: document.getElementById('stat-instant-rps'),
   
   // Rate Limit Elements
-  rateLimitCard: document.getElementById('rate-limit-card'),
+  rateLimitPanel: document.getElementById('rate-limit-panel'),
   rateLimitBadge: document.getElementById('rate-limit-badge'),
   rlLimit: document.getElementById('rl-limit'),
   rlRemaining: document.getElementById('rl-remaining'),
@@ -92,7 +105,7 @@ const DOM = {
   rateLimitBanner: document.getElementById('rate-limit-banner'),
   rateLimitMsg: document.getElementById('rate-limit-msg'),
   
-  // Metrics
+  // KPI Metrics
   mSuccessRate: document.getElementById('m-success-rate'),
   m2xx: document.getElementById('m-2xx'),
   m429: document.getElementById('m-429'),
@@ -101,18 +114,27 @@ const DOM = {
   m4xx: document.getElementById('m-4xx'),
   m5xx: document.getElementById('m-5xx'),
   mRps: document.getElementById('m-rps'),
+  mPeakRps: document.getElementById('m-peak-rps'),
   mLatencyAvg: document.getElementById('m-latency-avg'),
   mLatencyMin: document.getElementById('m-latency-min'),
   mLatencyMax: document.getElementById('m-latency-max'),
   mLatencyP95: document.getElementById('m-latency-p95'),
   
-  // Table & Logs
+  // Table & Action Toolbar
   logsTbody: document.getElementById('logs-tbody'),
   logCount: document.getElementById('log-count'),
+  btnGeneratePdf: document.getElementById('btn-generate-pdf'),
   btnExportCsv: document.getElementById('btn-export-csv'),
   btnExportJson: document.getElementById('btn-export-json'),
   
-  // Modal
+  // cURL Modal
+  curlModal: document.getElementById('curl-modal'),
+  btnCloseCurl: document.getElementById('btn-close-curl'),
+  btnCancelCurl: document.getElementById('btn-cancel-curl'),
+  curlInput: document.getElementById('curl-input'),
+  btnParseCurl: document.getElementById('btn-parse-curl'),
+  
+  // Detail Modal
   detailModal: document.getElementById('detail-modal'),
   btnCloseModal: document.getElementById('btn-close-modal'),
   modalMethodUrl: document.getElementById('modal-method-url'),
@@ -121,19 +143,44 @@ const DOM = {
   modalRatelimitHeaders: document.getElementById('modal-ratelimit-headers'),
   modalResponseBody: document.getElementById('modal-response-body'),
   modalAllHeaders: document.getElementById('modal-all-headers'),
-  btnCopyResponse: document.getElementById('btn-copy-response')
+  btnCopyResponse: document.getElementById('btn-copy-response'),
+  
+  // PDF Report Elements
+  pdfReportTemplate: document.getElementById('pdf-report-template'),
+  pdfSlaGrade: document.getElementById('pdf-sla-grade'),
+  pdfTargetUrl: document.getElementById('pdf-target-url'),
+  pdfTimestamp: document.getElementById('pdf-timestamp'),
+  pdfMethod: document.getElementById('pdf-method'),
+  pdfConcurrency: document.getElementById('pdf-concurrency'),
+  pdfTotalRequests: document.getElementById('pdf-total-requests'),
+  pdfSuccessRate: document.getElementById('pdf-success-rate'),
+  pdfThroughput: document.getElementById('pdf-throughput'),
+  pdfAvgLatency: document.getElementById('pdf-avg-latency'),
+  pdfLatMin: document.getElementById('pdf-lat-min'),
+  pdfLatP50: document.getElementById('pdf-lat-p50'),
+  pdfLatP90: document.getElementById('pdf-lat-p90'),
+  pdfLatP95: document.getElementById('pdf-lat-p95'),
+  pdfLatP99: document.getElementById('pdf-lat-p99'),
+  pdfLatMax: document.getElementById('pdf-lat-max'),
+  pdfRlDetected: document.getElementById('pdf-rl-detected'),
+  pdfRlLimit: document.getElementById('pdf-rl-limit'),
+  pdfRlBreach: document.getElementById('pdf-rl-breach'),
+  pdfRlSafeRps: document.getElementById('pdf-rl-safe-rps'),
+  pdfRlCount: document.getElementById('pdf-rl-count'),
+  pdfStatusBreakdownBody: document.getElementById('pdf-status-breakdown-body')
 };
 
-// Initialize Application
+// Bootstrap App
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initCharts();
+  loadSharedConfig();
   bindEvents();
 });
 
 // Theme Management
 function initTheme() {
-  const saved = localStorage.getItem('api-tester-theme') || 'dark';
+  const saved = localStorage.getItem('api-pulse-theme') || 'dark';
   document.documentElement.setAttribute('data-theme', saved);
   DOM.themeToggle.textContent = saved === 'dark' ? '🌙 Dark' : '☀️ Light';
 }
@@ -142,29 +189,31 @@ DOM.themeToggle.addEventListener('click', () => {
   const current = document.documentElement.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('api-tester-theme', next);
+  localStorage.setItem('api-pulse-theme', next);
   DOM.themeToggle.textContent = next === 'dark' ? '🌙 Dark' : '☀️ Light';
   
-  if (latencyChart && statusChart) {
-    const isDark = next === 'dark';
-    const textColor = isDark ? '#94a3b8' : '#64748b';
-    const gridColor = isDark ? '#334155' : '#e2e8f0';
-    
-    latencyChart.options.scales.x.grid.color = gridColor;
-    latencyChart.options.scales.y.grid.color = gridColor;
-    latencyChart.options.scales.x.ticks.color = textColor;
-    latencyChart.options.scales.y.ticks.color = textColor;
-    latencyChart.update();
-  }
+  updateChartsTheme(next === 'dark');
 });
 
-// Chart.js Visualizations
+function updateChartsTheme(isDark) {
+  if (!latencyChart || !statusChart) return;
+  const textColor = isDark ? '#94a3b8' : '#475569';
+  const gridColor = isDark ? '#1e293b' : '#e2e8f0';
+  
+  latencyChart.options.scales.x.grid.color = gridColor;
+  latencyChart.options.scales.y.grid.color = gridColor;
+  latencyChart.options.scales.x.ticks.color = textColor;
+  latencyChart.options.scales.y.ticks.color = textColor;
+  latencyChart.update();
+}
+
+// Chart.js Setup
 function initCharts() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const textColor = isDark ? '#94a3b8' : '#64748b';
-  const gridColor = isDark ? '#334155' : '#e2e8f0';
+  const textColor = isDark ? '#94a3b8' : '#475569';
+  const gridColor = isDark ? '#1e293b' : '#e2e8f0';
 
-  // Latency & Quota Chart
+  // Latency & Quota Depletion Timeline
   const ctxLatency = document.getElementById('latencyChart').getContext('2d');
   latencyChart = new Chart(ctxLatency, {
     type: 'line',
@@ -175,18 +224,19 @@ function initCharts() {
           label: 'Latency (ms)',
           data: [],
           borderColor: '#6366f1',
-          backgroundColor: 'rgba(99, 102, 241, 0.1)',
+          backgroundColor: 'rgba(99, 102, 241, 0.08)',
           pointBackgroundColor: [],
-          pointRadius: 3,
+          pointRadius: 2.5,
+          pointHoverRadius: 5,
           borderWidth: 2,
           tension: 0.1,
           yAxisID: 'y'
         },
         {
-          label: 'Rate-Limit Remaining',
+          label: 'Rate-Limit Quota Remaining',
           data: [],
           borderColor: '#f59e0b',
-          borderDash: [5, 5],
+          borderDash: [4, 4],
           pointRadius: 0,
           borderWidth: 1.5,
           yAxisID: 'y1'
@@ -197,24 +247,20 @@ function initCharts() {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
-      interaction: {
-        mode: 'index',
-        intersect: false
-      },
+      interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: {
-          labels: { color: textColor, boxWidth: 12, font: { size: 11 } }
+          labels: { color: textColor, boxWidth: 10, font: { size: 10, family: 'Inter' } }
         },
         tooltip: {
-          callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw}`
-          }
+          padding: 8,
+          bodyFont: { family: 'JetBrains Mono', size: 11 }
         }
       },
       scales: {
         x: {
           grid: { color: gridColor },
-          ticks: { color: textColor, maxTicksLimit: 10 }
+          ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10, family: 'JetBrains Mono' } }
         },
         y: {
           type: 'linear',
@@ -222,7 +268,7 @@ function initCharts() {
           position: 'left',
           title: { display: true, text: 'Latency (ms)', color: textColor, font: { size: 10 } },
           grid: { color: gridColor },
-          ticks: { color: textColor }
+          ticks: { color: textColor, font: { size: 10, family: 'JetBrains Mono' } }
         },
         y1: {
           type: 'linear',
@@ -230,18 +276,18 @@ function initCharts() {
           position: 'right',
           title: { display: true, text: 'Quota Remaining', color: '#f59e0b', font: { size: 10 } },
           grid: { drawOnChartArea: false },
-          ticks: { color: '#f59e0b' }
+          ticks: { color: '#f59e0b', font: { size: 10, family: 'JetBrains Mono' } }
         }
       }
     }
   });
 
-  // Status Distribution Chart
+  // Status Distribution Donut
   const ctxStatus = document.getElementById('statusChart').getContext('2d');
   statusChart = new Chart(ctxStatus, {
     type: 'doughnut',
     data: {
-      labels: ['2xx OK', '429 Rate Limit', '4xx Client', '5xx Server', 'Failed'],
+      labels: ['2xx OK', '429 Rate Limited', '4xx Client Error', '5xx Server Error', 'Network Failed'],
       datasets: [{
         data: [0, 0, 0, 0, 0],
         backgroundColor: [
@@ -251,41 +297,47 @@ function initCharts() {
           '#ef4444', // 5xx
           '#64748b'  // err
         ],
-        borderWidth: 0
+        borderWidth: 0,
+        hoverOffset: 4
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 300 },
+      animation: { duration: 250 },
       plugins: {
         legend: {
           position: 'right',
-          labels: { color: textColor, boxWidth: 10, font: { size: 10 } }
+          labels: { color: textColor, boxWidth: 10, font: { size: 10, family: 'Inter' } }
         }
       },
-      cutout: '65%'
+      cutout: '70%'
     }
   });
 }
 
 // Bind Event Listeners
 function bindEvents() {
+  // Method select color change
+  DOM.httpMethod.addEventListener('change', (e) => {
+    DOM.httpMethod.setAttribute('data-method', e.target.value);
+  });
+
   // Preset Chips
-  document.querySelectorAll('.preset-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      applyPreset(chip.getAttribute('data-preset'));
+  document.querySelectorAll('.preset-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      document.querySelectorAll('.preset-tag').forEach(t => t.classList.remove('active'));
+      tag.classList.add('active');
+      applyPreset(tag.getAttribute('data-preset'));
     });
   });
 
-  // Number quick chips
-  document.querySelectorAll('.num-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('.num-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      const val = parseInt(chip.getAttribute('data-val'), 10);
+  // Quick Volume Pills
+  document.querySelectorAll('.quick-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.quick-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      const val = parseInt(pill.getAttribute('data-val'), 10);
       DOM.totalRequestsInput.value = val;
       DOM.requestCountDisplay.textContent = val.toLocaleString();
       DOM.statTotal.textContent = val.toLocaleString();
@@ -308,16 +360,16 @@ function bindEvents() {
     DOM.delayVal.textContent = `${e.target.value}ms`;
   });
 
-  // CORS Proxy toggle
+  // CORS Proxy
   DOM.corsProxyToggle.addEventListener('change', (e) => {
     state.useCorsProxy = e.target.checked;
   });
 
-  // Tabs
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  // Subtabs
+  document.querySelectorAll('.subtab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.subtab-view').forEach(v => v.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
     });
@@ -326,48 +378,93 @@ function bindEvents() {
   // Add Header
   DOM.btnAddHeader.addEventListener('click', () => {
     const row = document.createElement('div');
-    row.className = 'header-row';
+    row.className = 'header-item';
     row.innerHTML = `
-      <input type="text" class="text-input header-key" placeholder="Key">
-      <input type="text" class="text-input header-val" placeholder="Value">
-      <button type="button" class="btn-remove">&times;</button>
+      <input type="text" class="ui-input header-key" placeholder="Key">
+      <input type="text" class="ui-input header-val" placeholder="Value">
+      <button type="button" class="btn-icon-danger">&times;</button>
     `;
     DOM.headersList.appendChild(row);
     updateHeaderCount();
   });
 
   DOM.headersList.addEventListener('click', (e) => {
-    if (e.target.classList.contains('btn-remove')) {
-      e.target.closest('.header-row').remove();
+    if (e.target.classList.contains('btn-icon-danger')) {
+      e.target.closest('.header-item').remove();
       updateHeaderCount();
     }
   });
 
-  // Controls
+  // Format JSON Body
+  DOM.btnBeautifyJson.addEventListener('click', () => {
+    try {
+      const val = DOM.requestBody.value.trim();
+      if (!val) return;
+      const parsed = JSON.parse(val);
+      DOM.requestBody.value = JSON.stringify(parsed, null, 2);
+    } catch (e) {
+      alert('Invalid JSON syntax: ' + e.message);
+    }
+  });
+
+  // Apply Auth Bearer
+  DOM.btnApplyAuth.addEventListener('click', () => {
+    const token = DOM.authBearerToken.value.trim();
+    if (!token) return;
+    
+    // Check if Authorization header already exists
+    let existing = null;
+    DOM.headersList.querySelectorAll('.header-item').forEach(row => {
+      const k = row.querySelector('.header-key').value.trim().toLowerCase();
+      if (k === 'authorization') existing = row;
+    });
+
+    if (existing) {
+      existing.querySelector('.header-val').value = `Bearer ${token}`;
+    } else {
+      const row = document.createElement('div');
+      row.className = 'header-item';
+      row.innerHTML = `
+        <input type="text" class="ui-input header-key" value="Authorization">
+        <input type="text" class="ui-input header-val" value="Bearer ${token}">
+        <button type="button" class="btn-icon-danger">&times;</button>
+      `;
+      DOM.headersList.appendChild(row);
+      updateHeaderCount();
+    }
+    alert('Authorization Bearer header applied!');
+  });
+
+  // Execution Controls
   DOM.btnStart.addEventListener('click', startTest);
   DOM.btnPause.addEventListener('click', togglePause);
   DOM.btnStop.addEventListener('click', stopTest);
   DOM.btnClear.addEventListener('click', clearAll);
 
   // Table Filters
-  document.querySelectorAll('.filter-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      state.filter = pill.getAttribute('data-filter');
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      state.filter = chip.getAttribute('data-filter');
       renderLogsTable();
     });
   });
 
-  // Export Buttons
+  // Report & Export Toolbar
+  DOM.btnGeneratePdf.addEventListener('click', generatePdfReport);
   DOM.btnExportCsv.addEventListener('click', exportCsv);
   DOM.btnExportJson.addEventListener('click', exportJson);
+  DOM.btnShareConfig.addEventListener('click', shareConfiguration);
 
-  // Modal
-  DOM.btnCloseModal.addEventListener('click', () => {
-    DOM.detailModal.classList.remove('active');
-  });
+  // cURL Modal Events
+  DOM.btnOpenCurl.addEventListener('click', () => DOM.curlModal.classList.add('active'));
+  DOM.btnCloseCurl.addEventListener('click', () => DOM.curlModal.classList.remove('active'));
+  DOM.btnCancelCurl.addEventListener('click', () => DOM.curlModal.classList.remove('active'));
+  DOM.btnParseCurl.addEventListener('click', parseCurlCommand);
 
+  // Details Modal Events
+  DOM.btnCloseModal.addEventListener('click', () => DOM.detailModal.classList.remove('active'));
   DOM.detailModal.addEventListener('click', (e) => {
     if (e.target === DOM.detailModal) DOM.detailModal.classList.remove('active');
   });
@@ -380,14 +477,15 @@ function bindEvents() {
 }
 
 function updateHeaderCount() {
-  const count = DOM.headersList.querySelectorAll('.header-row').length;
+  const count = DOM.headersList.querySelectorAll('.header-item').length;
   DOM.headerCount.textContent = count;
 }
 
-// Preset configurations (all open public CORS endpoints)
+// Preset Targets (all public CORS enabled)
 function applyPreset(name) {
   if (name === 'json-get-100') {
     DOM.httpMethod.value = 'GET';
+    DOM.httpMethod.setAttribute('data-method', 'GET');
     DOM.targetUrl.value = 'https://jsonplaceholder.typicode.com/posts/1';
     DOM.totalRequestsInput.value = 100;
     DOM.requestCountDisplay.textContent = '100';
@@ -398,17 +496,19 @@ function applyPreset(name) {
     DOM.delayVal.textContent = '0ms';
   } else if (name === 'rate-limit-demo') {
     DOM.httpMethod.value = 'GET';
+    DOM.httpMethod.setAttribute('data-method', 'GET');
     DOM.targetUrl.value = 'https://httpbin.org/status/429';
-    DOM.totalRequestsInput.value = 10;
-    DOM.requestCountDisplay.textContent = '10';
-    DOM.statTotal.textContent = '10';
-    DOM.concurrencySlider.value = 2;
-    DOM.concurrencyVal.textContent = '2';
-    DOM.delaySlider.value = 100;
-    DOM.delayVal.textContent = '100ms';
+    DOM.totalRequestsInput.value = 20;
+    DOM.requestCountDisplay.textContent = '20';
+    DOM.statTotal.textContent = '20';
+    DOM.concurrencySlider.value = 4;
+    DOM.concurrencyVal.textContent = '4';
+    DOM.delaySlider.value = 50;
+    DOM.delayVal.textContent = '50ms';
     DOM.stopOn429.checked = true;
-  } else if (name === 'heavy-1000') {
+  } else if (name === 'burst-1000') {
     DOM.httpMethod.value = 'GET';
+    DOM.httpMethod.setAttribute('data-method', 'GET');
     DOM.targetUrl.value = 'https://jsonplaceholder.typicode.com/posts/1';
     DOM.totalRequestsInput.value = 1000;
     DOM.requestCountDisplay.textContent = '1,000';
@@ -418,8 +518,20 @@ function applyPreset(name) {
     DOM.delaySlider.value = 0;
     DOM.delayVal.textContent = '0ms';
     DOM.stopOn429.checked = false;
+  } else if (name === 'stress-5000') {
+    DOM.httpMethod.value = 'GET';
+    DOM.httpMethod.setAttribute('data-method', 'GET');
+    DOM.targetUrl.value = 'https://jsonplaceholder.typicode.com/posts/1';
+    DOM.totalRequestsInput.value = 5000;
+    DOM.requestCountDisplay.textContent = '5,000';
+    DOM.statTotal.textContent = '5,000';
+    DOM.concurrencySlider.value = 40;
+    DOM.concurrencyVal.textContent = '40';
+    DOM.delaySlider.value = 0;
+    DOM.delayVal.textContent = '0ms';
   } else if (name === 'post-echo') {
     DOM.httpMethod.value = 'POST';
+    DOM.httpMethod.setAttribute('data-method', 'POST');
     DOM.targetUrl.value = 'https://jsonplaceholder.typicode.com/posts';
     DOM.totalRequestsInput.value = 50;
     DOM.requestCountDisplay.textContent = '50';
@@ -427,10 +539,171 @@ function applyPreset(name) {
     DOM.concurrencySlider.value = 5;
     DOM.concurrencyVal.textContent = '5';
     DOM.requestBody.value = JSON.stringify({
-      title: 'Load Test Item {{id}}',
+      title: 'Benchmark Run #{{id}}',
       timestamp: '{{timestamp}}',
-      randomToken: '{{random}}'
+      randomToken: '{{random}}',
+      uuid: '{{uuid}}'
     }, null, 2);
+  }
+}
+
+// cURL Parser
+function parseCurlCommand() {
+  const raw = DOM.curlInput.value.trim();
+  if (!raw) return;
+
+  try {
+    // Extract Method
+    let method = 'GET';
+    const methodMatch = raw.match(/-X\s+([A-Z]+)/i) || raw.match(/--request\s+([A-Z]+)/i);
+    if (methodMatch) {
+      method = methodMatch[1].toUpperCase();
+    } else if (raw.includes('-d ') || raw.includes('--data') || raw.includes('--data-raw')) {
+      method = 'POST';
+    }
+
+    // Extract URL
+    let url = '';
+    const urlMatch = raw.match(/curl\s+(?:-[^\s]+\s+)*['"]?(https?:\/\/[^\s'"\\]+)/i);
+    if (urlMatch) {
+      url = urlMatch[1];
+    } else {
+      const anyUrl = raw.match(/https?:\/\/[^\s'"]+/);
+      if (anyUrl) url = anyUrl[0];
+    }
+
+    if (!url) {
+      alert('Could not find a valid HTTP/HTTPS URL in the cURL command.');
+      return;
+    }
+
+    // Extract Headers
+    const headers = {};
+    const headerRegex = /(?:-H|--header)\s+['"]([^'"]+)['"]/g;
+    let match;
+    while ((match = headerRegex.exec(raw)) !== null) {
+      const parts = match[1].split(':');
+      if (parts.length >= 2) {
+        const key = parts[0].trim();
+        const val = parts.slice(1).join(':').trim();
+        headers[key] = val;
+      }
+    }
+
+    // Extract Data Body
+    let body = '';
+    const dataMatch = raw.match(/(?:-d|--data|--data-raw)\s+['"]([\s\S]*?)['"](?:\s+-[A-Za-z]|$)/);
+    if (dataMatch) {
+      body = dataMatch[1];
+    }
+
+    // Populate UI
+    DOM.httpMethod.value = method;
+    DOM.httpMethod.setAttribute('data-method', method);
+    DOM.targetUrl.value = url;
+
+    // Populate Headers
+    DOM.headersList.innerHTML = '';
+    const headerEntries = Object.entries(headers);
+    if (headerEntries.length === 0) {
+      DOM.headersList.innerHTML = `
+        <div class="header-item">
+          <input type="text" class="ui-input header-key" placeholder="Key" value="Accept">
+          <input type="text" class="ui-input header-val" placeholder="Value" value="application/json">
+          <button type="button" class="btn-icon-danger">&times;</button>
+        </div>
+      `;
+    } else {
+      headerEntries.forEach(([k, v]) => {
+        const row = document.createElement('div');
+        row.className = 'header-item';
+        row.innerHTML = `
+          <input type="text" class="ui-input header-key" value="${escapeHtml(k)}">
+          <input type="text" class="ui-input header-val" value="${escapeHtml(v)}">
+          <button type="button" class="btn-icon-danger">&times;</button>
+        `;
+        DOM.headersList.appendChild(row);
+      });
+    }
+    updateHeaderCount();
+
+    if (body) {
+      try {
+        DOM.requestBody.value = JSON.stringify(JSON.parse(body), null, 2);
+      } catch (e) {
+        DOM.requestBody.value = body;
+      }
+    }
+
+    DOM.curlModal.classList.remove('active');
+    alert(`Successfully imported cURL! Loaded ${method} to ${url}`);
+  } catch (err) {
+    alert('Error parsing cURL: ' + err.message);
+  }
+}
+
+// Share Configuration via URL
+function shareConfiguration() {
+  const config = {
+    method: DOM.httpMethod.value,
+    url: DOM.targetUrl.value,
+    req: DOM.totalRequestsInput.value,
+    con: DOM.concurrencySlider.value,
+    del: DOM.delaySlider.value,
+    body: DOM.requestBody.value,
+    headers: getHeadersFromUI()
+  };
+
+  const encoded = encodeURIComponent(JSON.stringify(config));
+  const shareUrl = `${window.location.origin}${window.location.pathname}#config=${encoded}`;
+
+  navigator.clipboard.writeText(shareUrl).then(() => {
+    alert('Test configuration copied to clipboard as a shareable link!');
+  });
+}
+
+function loadSharedConfig() {
+  if (!window.location.hash || !window.location.hash.includes('config=')) return;
+  try {
+    const raw = window.location.hash.split('config=')[1];
+    const config = JSON.parse(decodeURIComponent(raw));
+
+    if (config.method) {
+      DOM.httpMethod.value = config.method;
+      DOM.httpMethod.setAttribute('data-method', config.method);
+    }
+    if (config.url) DOM.targetUrl.value = config.url;
+    if (config.req) {
+      DOM.totalRequestsInput.value = config.req;
+      DOM.requestCountDisplay.textContent = parseInt(config.req, 10).toLocaleString();
+      DOM.statTotal.textContent = parseInt(config.req, 10).toLocaleString();
+    }
+    if (config.con) {
+      DOM.concurrencySlider.value = config.con;
+      DOM.concurrencyVal.textContent = config.con;
+    }
+    if (config.del) {
+      DOM.delaySlider.value = config.del;
+      DOM.delayVal.textContent = `${config.del}ms`;
+    }
+    if (config.body) DOM.requestBody.value = config.body;
+
+    if (config.headers && Object.keys(config.headers).length > 0) {
+      DOM.headersList.innerHTML = '';
+      Object.entries(config.headers).forEach(([k, v]) => {
+        const row = document.createElement('div');
+        row.className = 'header-item';
+        row.innerHTML = `
+          <input type="text" class="ui-input header-key" value="${escapeHtml(k)}">
+          <input type="text" class="ui-input header-val" value="${escapeHtml(v)}">
+          <button type="button" class="btn-icon-danger">&times;</button>
+        `;
+        DOM.headersList.appendChild(row);
+      });
+      updateHeaderCount();
+    }
+  } catch (e) {
+    console.error('Failed to parse shared config from URL hash', e);
   }
 }
 
@@ -438,11 +711,11 @@ function applyPreset(name) {
 async function startTest() {
   const rawUrl = DOM.targetUrl.value.trim();
   if (!rawUrl) {
-    alert('Please enter a valid target URL');
+    alert('Please enter a target URL');
     return;
   }
 
-  // Reset state
+  // Reset Run State
   state.isRunning = true;
   state.isPaused = false;
   state.isStopped = false;
@@ -457,6 +730,7 @@ async function startTest() {
   state.activeWorkers = 0;
   state.results = [];
   state.startTime = Date.now();
+  state.peakRps = 0;
 
   // Reset Rate Limit State
   state.rateLimit = {
@@ -477,13 +751,14 @@ async function startTest() {
   DOM.btnPause.disabled = false;
   DOM.btnPause.textContent = '⏸ Pause';
   DOM.btnStop.disabled = false;
-  DOM.statusBadge.textContent = 'Running';
+  DOM.statusBadge.textContent = 'Dispatched';
   DOM.statusBadge.style.color = 'var(--accent-primary)';
+  DOM.systemDot.className = 'status-dot active';
   DOM.statTotal.textContent = state.totalRequests.toLocaleString();
   
-  DOM.rateLimitCard.classList.remove('reached');
+  DOM.rateLimitPanel.classList.remove('breached');
   DOM.rateLimitBadge.textContent = 'Inspecting Headers...';
-  DOM.rateLimitBadge.className = 'badge';
+  DOM.rateLimitBadge.className = 'status-tag';
   DOM.rateLimitBanner.style.display = 'none';
   DOM.rlLimit.textContent = '--';
   DOM.rlRemaining.textContent = '--';
@@ -501,7 +776,7 @@ async function startTest() {
   const rawBody = DOM.requestBody.value;
   const method = DOM.httpMethod.value;
 
-  // Launch Concurrency Worker Pool
+  // Concurrency Pool
   const workers = [];
   const activeConcurrency = Math.min(state.concurrency, state.totalRequests);
   for (let i = 0; i < activeConcurrency; i++) {
@@ -512,7 +787,7 @@ async function startTest() {
   finishTest();
 }
 
-// Individual Worker in the Concurrency Pool
+// Worker Loop
 async function runWorker(workerId, url, method, headers, bodyTemplate) {
   state.activeWorkers++;
   updateProgressUI();
@@ -526,16 +801,16 @@ async function runWorker(workerId, url, method, headers, bodyTemplate) {
     const reqNum = ++state.requestIndex;
     if (reqNum > state.totalRequests) break;
 
-    // Render variables
+    // Variable Replacement
     let processedBody = null;
-    if (bodyTemplate && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+    if (bodyTemplate && ['POST', 'PUT', 'PATCH'].includes(method)) {
       processedBody = bodyTemplate
         .replace(/{{id}}/g, reqNum)
         .replace(/{{timestamp}}/g, new Date().toISOString())
-        .replace(/{{random}}/g, Math.random().toString(36).substring(2, 9));
+        .replace(/{{random}}/g, Math.random().toString(36).substring(2, 9))
+        .replace(/{{uuid}}/g, generateUUID());
     }
 
-    // Execute Request 100% in Browser
     const result = await executeSingleRequest(reqNum, url, method, headers, processedBody);
     state.results.push(result);
     state.completedCount++;
@@ -559,11 +834,9 @@ async function runWorker(workerId, url, method, headers, bodyTemplate) {
   updateProgressUI();
 }
 
-// Pure Client-side Browser Fetch
+// Client-side Browser Fetch
 async function executeSingleRequest(id, url, method, headers, body) {
   const reqStart = performance.now();
-  
-  // Optional public CORS bypass if target blocks CORS
   let targetUrl = url;
   if (state.useCorsProxy) {
     targetUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
@@ -581,7 +854,6 @@ async function executeSingleRequest(id, url, method, headers, body) {
     const response = await fetch(targetUrl, fetchOpts);
     const duration = Math.round(performance.now() - reqStart);
     
-    // Extract available headers
     const resHeaders = {};
     const rateLimitHeaders = {};
     response.headers.forEach((v, k) => {
@@ -596,7 +868,7 @@ async function executeSingleRequest(id, url, method, headers, body) {
     try {
       textSnippet = (await response.text()).slice(0, 3000);
     } catch (e) {
-      textSnippet = '(Body snippet not readable)';
+      textSnippet = '(Body not readable)';
     }
 
     return {
@@ -631,7 +903,7 @@ async function executeSingleRequest(id, url, method, headers, body) {
   }
 }
 
-// Rate Limit & Header Inspection
+// Rate Limit Inspector
 function inspectRateLimit(result) {
   const rl = result.rateLimitHeaders || {};
   
@@ -676,31 +948,31 @@ function inspectRateLimit(result) {
 
       if (state.rateLimit.limit && secondsLeft > 0) {
         const safeRps = (state.rateLimit.limit / Math.max(1, secondsLeft)).toFixed(2);
+        state.rateLimit.sustainableRps = safeRps;
         DOM.rlSustainableRps.textContent = `${safeRps}/s`;
       }
     }
 
     DOM.rateLimitBadge.textContent = 'Rate Limit Headers Detected';
-    DOM.rateLimitBadge.className = 'badge badge-2xx';
+    DOM.rateLimitBadge.className = 'status-tag status-2xx';
   }
 
-  // Detect Limit Reach / Breach (HTTP 429 or Remaining == 0)
+  // Detect Limit Breach
   if ((result.status === 429 || state.rateLimit.remaining === 0) && !state.rateLimit.firstBreachIndex) {
     state.rateLimit.firstBreachIndex = result.id;
     state.rateLimit.firstBreachTime = new Date().toLocaleTimeString();
     
-    DOM.rateLimitCard.classList.add('reached');
+    DOM.rateLimitPanel.classList.add('breached');
     DOM.rlBreachReq.textContent = `#${result.id}`;
-    DOM.rateLimitBadge.textContent = 'LIMIT REACHED!';
-    DOM.rateLimitBadge.className = 'badge badge-429';
+    DOM.rateLimitBadge.textContent = 'RATE LIMIT HIT!';
+    DOM.rateLimitBadge.className = 'status-tag status-429';
 
     DOM.rateLimitBanner.style.display = 'flex';
-    DOM.rateLimitBanner.className = 'alert-banner alert-danger';
-    DOM.rateLimitMsg.innerHTML = `<strong>Rate Limit Hit!</strong> First reached at Request <strong>#${result.id}</strong> (${state.rateLimit.firstBreachTime}). Quota exhausted.`;
+    DOM.rateLimitBanner.className = 'breach-alert danger';
+    DOM.rateLimitMsg.innerHTML = `<strong>Rate Limit Hit!</strong> Breached at Request <strong>#${result.id}</strong> (${state.rateLimit.firstBreachTime}). Quota depleted.`;
   }
 }
 
-// Reset Countdown
 function startResetCountdown(initialSeconds) {
   if (state.resetTimerInterval) clearInterval(state.resetTimerInterval);
   let remaining = initialSeconds;
@@ -711,31 +983,37 @@ function startResetCountdown(initialSeconds) {
       clearInterval(state.resetTimerInterval);
       DOM.rlReset.textContent = '0s (Reset)';
       DOM.rateLimitBadge.textContent = 'Quota Refreshed';
-      DOM.rateLimitBadge.className = 'badge badge-2xx';
+      DOM.rateLimitBadge.className = 'status-tag status-2xx';
     } else {
       DOM.rlReset.textContent = `${remaining}s`;
     }
   }, 1000);
 }
 
-// Stop execution automatically when 429 reached
 function triggerRateLimitStop(reqNum) {
   state.isStopped = true;
-  DOM.statusBadge.textContent = 'Stopped (Limit Reached)';
+  DOM.statusBadge.textContent = 'Halted (429 Hit)';
   DOM.statusBadge.style.color = 'var(--warning)';
   DOM.rateLimitBanner.style.display = 'flex';
-  DOM.rateLimitBanner.className = 'alert-banner alert-warning';
-  DOM.rateLimitMsg.innerHTML = `🛡️ <strong>Auto-Stop Triggered:</strong> Execution paused automatically upon hitting HTTP 429 at Request <strong>#${reqNum}</strong>.`;
+  DOM.rateLimitBanner.className = 'breach-alert warning';
+  DOM.rateLimitMsg.innerHTML = `🛡️ <strong>Safety Auto-Halt:</strong> Dispatches paused upon hitting HTTP 429 at Request <strong>#${reqNum}</strong>.`;
 }
 
-// Update Elapsed & ETA
+// Elapsed Time, ETA, and Instantaneous RPS
 function updateElapsedAndEta() {
   if (!state.startTime) return;
   const elapsedSec = (Date.now() - state.startTime) / 1000;
   DOM.statElapsed.textContent = `${elapsedSec.toFixed(1)}s`;
 
   if (state.completedCount > 0 && state.isRunning) {
-    const rate = state.completedCount / elapsedSec;
+    const rate = state.completedCount / Math.max(0.1, elapsedSec);
+    DOM.statInstantRps.textContent = `${rate.toFixed(1)} RPS`;
+    
+    if (rate > state.peakRps) {
+      state.peakRps = rate;
+      DOM.mPeakRps.textContent = state.peakRps.toFixed(1);
+    }
+
     const remainingReqs = state.totalRequests - state.completedCount;
     if (rate > 0 && remainingReqs > 0) {
       const etaSec = remainingReqs / rate;
@@ -746,7 +1024,6 @@ function updateElapsedAndEta() {
   }
 }
 
-// Progress and Stats UI
 function updateProgressUI() {
   const pct = Math.min(100, Math.round((state.completedCount / state.totalRequests) * 100));
   DOM.progressFill.style.width = `${pct}%`;
@@ -755,18 +1032,13 @@ function updateProgressUI() {
   DOM.statActiveWorkers.textContent = state.activeWorkers;
 }
 
-// Real-time Metrics Calculation
+// KPI Dashboard Calculations
 function updateMetricsUI() {
   updateProgressUI();
-
   const total = state.results.length;
   if (total === 0) return;
 
-  let count2xx = 0;
-  let count429 = 0;
-  let count4xx = 0;
-  let count5xx = 0;
-  let countFail = 0;
+  let count2xx = 0, count429 = 0, count4xx = 0, count5xx = 0, countFail = 0;
   let latencySum = 0;
   let latencies = [];
 
@@ -803,13 +1075,14 @@ function updateMetricsUI() {
   const min = latencies[0];
   const max = latencies[latencies.length - 1];
   const p50 = latencies[Math.floor(latencies.length * 0.5)] || 0;
+  const p90 = latencies[Math.floor(latencies.length * 0.9)] || 0;
   const p95 = latencies[Math.floor(latencies.length * 0.95)] || 0;
   const p99 = latencies[Math.floor(latencies.length * 0.99)] || 0;
 
   DOM.mLatencyAvg.textContent = `${avg}ms`;
   DOM.mLatencyMin.textContent = min;
   DOM.mLatencyMax.textContent = max;
-  DOM.mLatencyP95.textContent = `${p50} / ${p95} / ${p99}ms`;
+  DOM.mLatencyP95.textContent = `${p50}/${p90}/${p99}ms`;
 
   statusChart.data.datasets[0].data = [count2xx, count429, count4xx, count5xx, countFail];
   statusChart.update('none');
@@ -856,7 +1129,6 @@ function resetCharts() {
   statusChart.update();
 }
 
-// Pause
 function togglePause() {
   state.isPaused = !state.isPaused;
   if (state.isPaused) {
@@ -865,15 +1137,14 @@ function togglePause() {
     DOM.statusBadge.style.color = 'var(--warning)';
   } else {
     DOM.btnPause.textContent = '⏸ Pause';
-    DOM.statusBadge.textContent = 'Running';
+    DOM.statusBadge.textContent = 'Dispatched';
     DOM.statusBadge.style.color = 'var(--accent-primary)';
   }
 }
 
-// Stop
 function stopTest() {
   state.isStopped = true;
-  DOM.statusBadge.textContent = 'Stopped';
+  DOM.statusBadge.textContent = 'Terminated';
   DOM.statusBadge.style.color = 'var(--danger)';
   finishTest();
 }
@@ -881,13 +1152,14 @@ function stopTest() {
 function finishTest() {
   state.isRunning = false;
   if (state.elapsedInterval) clearInterval(state.elapsedInterval);
+  DOM.systemDot.className = 'status-dot';
   
   DOM.btnStart.disabled = false;
   DOM.btnPause.disabled = true;
   DOM.btnStop.disabled = true;
   
   if (!state.isStopped) {
-    DOM.statusBadge.textContent = 'Finished';
+    DOM.statusBadge.textContent = 'Completed';
     DOM.statusBadge.style.color = 'var(--success)';
   }
 
@@ -896,12 +1168,12 @@ function finishTest() {
   renderLogsTable();
 }
 
-// Clear
 function clearAll() {
   if (state.isRunning) return;
   state.results = [];
   state.requestIndex = 0;
   state.completedCount = 0;
+  state.peakRps = 0;
   
   DOM.progressFill.style.width = '0%';
   DOM.progressPercent.textContent = '0%';
@@ -909,12 +1181,13 @@ function clearAll() {
   DOM.statActiveWorkers.textContent = '0';
   DOM.statElapsed.textContent = '0.0s';
   DOM.statEta.textContent = '--';
+  DOM.statInstantRps.textContent = '0.0 RPS';
   DOM.statusBadge.textContent = 'Idle';
-  DOM.statusBadge.style.color = 'var(--text-secondary)';
+  DOM.statusBadge.style.color = 'var(--text-muted)';
 
-  DOM.rateLimitCard.classList.remove('reached');
+  DOM.rateLimitPanel.classList.remove('breached');
   DOM.rateLimitBadge.textContent = 'Awaiting Requests...';
-  DOM.rateLimitBadge.className = 'badge';
+  DOM.rateLimitBadge.className = 'status-tag';
   DOM.rateLimitBanner.style.display = 'none';
   DOM.rlLimit.textContent = '--';
   DOM.rlRemaining.textContent = '--';
@@ -930,6 +1203,7 @@ function clearAll() {
   DOM.m4xx.textContent = '0';
   DOM.m5xx.textContent = '0';
   DOM.mRps.textContent = '0.0';
+  DOM.mPeakRps.textContent = '0.0';
   DOM.mLatencyAvg.textContent = '0ms';
   DOM.mLatencyMin.textContent = '0';
   DOM.mLatencyMax.textContent = '0';
@@ -939,7 +1213,7 @@ function clearAll() {
   renderLogsTable();
 }
 
-// Render Request Logs Table
+// Request Stream Table
 function renderLogsTable() {
   const filtered = state.results.filter(r => {
     if (state.filter === 'all') return true;
@@ -956,39 +1230,44 @@ function renderLogsTable() {
   if (filtered.length === 0) {
     DOM.logsTbody.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-          ${state.results.length === 0 ? 'No requests sent yet.' : 'No requests matching selected filter.'}
+        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+          ${state.results.length === 0 ? 'No requests sent yet.' : 'No requests matching current filter.'}
         </td>
       </tr>
     `;
     return;
   }
 
-  const displayRows = filtered.slice(-200).reverse();
+  const displayRows = filtered.slice(-250).reverse();
   let html = '';
 
   for (let i = 0; i < displayRows.length; i++) {
     const item = displayRows[i];
-    let badgeClass = 'badge-2xx';
-    if (item.status === 429) badgeClass = 'badge-429';
-    else if (item.status >= 400 && item.status < 500) badgeClass = 'badge-4xx';
-    else if (item.status >= 500 || item.status === 0) badgeClass = 'badge-5xx';
+    let badgeClass = 'status-2xx';
+    if (item.status === 429) badgeClass = 'status-429';
+    else if (item.status >= 400 && item.status < 500) badgeClass = 'status-4xx';
+    else if (item.status >= 500 || item.status === 0) badgeClass = 'status-5xx';
+
+    let latencyClass = 'latency-normal';
+    if (item.duration < 150) latencyClass = 'latency-fast';
+    else if (item.duration > 400) latencyClass = 'latency-slow';
+    if (item.duration > 800) latencyClass = 'latency-critical';
 
     const remainingQuota = (item.rateLimitHeaders && item.rateLimitHeaders['x-ratelimit-remaining']) ?? '--';
-    const preview = escapeHtml(item.bodySnippet ? item.bodySnippet.substring(0, 70) : '(empty)');
+    const preview = escapeHtml(item.bodySnippet ? item.bodySnippet.substring(0, 65) : '(empty)');
 
     html += `
       <tr>
         <td>#${item.id}</td>
-        <td><strong>${item.method}</strong></td>
-        <td><span class="badge ${badgeClass}">${item.status || 'ERR'} ${item.statusText || ''}</span></td>
-        <td>${item.duration}ms</td>
+        <td><strong style="color: var(--text-primary);">${item.method}</strong></td>
+        <td><span class="status-tag ${badgeClass}">${item.status || 'ERR'} ${item.statusText || ''}</span></td>
+        <td class="${latencyClass}"><strong>${item.duration}ms</strong></td>
         <td>${remainingQuota}</td>
-        <td style="color: var(--text-secondary); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        <td style="color: var(--text-muted); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
           ${preview}
         </td>
         <td>
-          <button class="btn btn-secondary" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;" onclick="viewDetails(${item.id})">View</button>
+          <button class="btn-secondary" style="padding: 0.15rem 0.45rem; font-size: 0.7rem;" onclick="viewDetails(${item.id})">Inspect</button>
         </td>
       </tr>
     `;
@@ -997,19 +1276,19 @@ function renderLogsTable() {
   DOM.logsTbody.innerHTML = html;
 }
 
-// Modal Detail
+// Request Inspector Modal
 window.viewDetails = function(reqId) {
   const item = state.results.find(r => r.id === reqId);
   if (!item) return;
 
   DOM.modalMethodUrl.textContent = `${item.method} ${item.url}`;
   
-  let badgeClass = 'badge-2xx';
-  if (item.status === 429) badgeClass = 'badge-429';
-  else if (item.status >= 400 && item.status < 500) badgeClass = 'badge-4xx';
-  else if (item.status >= 500 || item.status === 0) badgeClass = 'badge-5xx';
+  let badgeClass = 'status-2xx';
+  if (item.status === 429) badgeClass = 'status-429';
+  else if (item.status >= 400 && item.status < 500) badgeClass = 'status-4xx';
+  else if (item.status >= 500 || item.status === 0) badgeClass = 'status-5xx';
 
-  DOM.modalStatusBadge.className = `badge ${badgeClass}`;
+  DOM.modalStatusBadge.className = `status-tag ${badgeClass}`;
   DOM.modalStatusBadge.textContent = `${item.status} ${item.statusText}`;
   DOM.modalDuration.textContent = `${item.duration}ms (${item.timestamp})`;
 
@@ -1031,9 +1310,165 @@ window.viewDetails = function(reqId) {
   DOM.detailModal.classList.add('active');
 };
 
+// ==========================================================================
+// Executive PDF Audit Report Generator
+// ==========================================================================
+async function generatePdfReport() {
+  if (state.results.length === 0) {
+    alert('Please execute an API test run first before generating an Audit Report.');
+    return;
+  }
+
+  if (typeof html2pdf === 'undefined') {
+    alert('PDF generation library is still loading. Please check your internet connection.');
+    return;
+  }
+
+  const btn = DOM.btnGeneratePdf;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '⏳ Compiling Audit PDF...';
+  btn.disabled = true;
+
+  try {
+    const total = state.results.length;
+    let count2xx = 0, count429 = 0, count4xx = 0, count5xx = 0, countFail = 0;
+    let latencySum = 0;
+    let latencies = [];
+
+    for (let i = 0; i < total; i++) {
+      const r = state.results[i];
+      latencies.push(r.duration);
+      latencySum += r.duration;
+
+      if (r.status >= 200 && r.status < 300) count2xx++;
+      else if (r.status === 429) count429++;
+      else if (r.status >= 400 && r.status < 500) count4xx++;
+      else if (r.status >= 500 && r.status < 600) count5xx++;
+      else countFail++;
+    }
+
+    latencies.sort((a, b) => a - b);
+    const avg = Math.round(latencySum / total);
+    const min = latencies[0];
+    const max = latencies[latencies.length - 1];
+    const p50 = latencies[Math.floor(latencies.length * 0.5)] || 0;
+    const p90 = latencies[Math.floor(latencies.length * 0.9)] || 0;
+    const p95 = latencies[Math.floor(latencies.length * 0.95)] || 0;
+    const p99 = latencies[Math.floor(latencies.length * 0.99)] || 0;
+
+    const elapsedSec = Math.max(0.1, (Date.now() - state.startTime) / 1000);
+    const rps = (total / elapsedSec).toFixed(1);
+    const successRate = ((count2xx / total) * 100).toFixed(1);
+
+    // Compute SLA Grade
+    let grade = 'GRADE A+';
+    let gradeClass = 'sla-grade-a';
+
+    if (count429 > 0 || successRate < 85) {
+      grade = 'GRADE F (BREACHED)';
+      gradeClass = 'sla-grade-f';
+    } else if (successRate < 95 || p95 > 1200) {
+      grade = 'GRADE C (EVALUATE)';
+      gradeClass = 'sla-grade-c';
+    } else if (successRate < 99 || p95 > 600) {
+      grade = 'GRADE B (ACCEPTABLE)';
+      gradeClass = 'sla-grade-b';
+    } else if (p95 > 350) {
+      grade = 'GRADE A (EXCELLENT)';
+      gradeClass = 'sla-grade-a';
+    }
+
+    // Populate PDF Template DOM
+    DOM.pdfSlaGrade.textContent = `SLA: ${grade}`;
+    DOM.pdfSlaGrade.className = `pdf-badge-sla ${gradeClass}`;
+    DOM.pdfTargetUrl.textContent = DOM.targetUrl.value;
+    DOM.pdfTimestamp.textContent = new Date().toLocaleString();
+    DOM.pdfMethod.textContent = DOM.httpMethod.value;
+    DOM.pdfConcurrency.textContent = `${DOM.concurrencySlider.value} workers (Delay: ${DOM.delaySlider.value}ms)`;
+
+    DOM.pdfTotalRequests.textContent = total.toLocaleString();
+    DOM.pdfSuccessRate.textContent = `${successRate}%`;
+    DOM.pdfThroughput.textContent = `${rps} req/s`;
+    DOM.pdfAvgLatency.textContent = `${avg} ms`;
+
+    DOM.pdfLatMin.textContent = `${min} ms`;
+    DOM.pdfLatP50.textContent = `${p50} ms`;
+    DOM.pdfLatP90.textContent = `${p90} ms`;
+    DOM.pdfLatP95.textContent = `${p95} ms`;
+    DOM.pdfLatP99.textContent = `${p99} ms`;
+    DOM.pdfLatMax.textContent = `${max} ms`;
+
+    DOM.pdfRlDetected.textContent = state.rateLimit.detected ? 'Active (X-RateLimit Headers Found)' : 'None Detected on Target';
+    DOM.pdfRlLimit.textContent = state.rateLimit.limit ? `${state.rateLimit.limit} req / window` : 'Not Enforced';
+    DOM.pdfRlBreach.textContent = state.rateLimit.firstBreachIndex ? `Hit at Request #${state.rateLimit.firstBreachIndex} (${state.rateLimit.firstBreachTime})` : 'Zero Breaches Detected';
+    DOM.pdfRlSafeRps.textContent = state.rateLimit.sustainableRps ? `${state.rateLimit.sustainableRps} requests/sec` : 'Unlimited / Not Detected';
+    DOM.pdfRlCount.textContent = `${count429} lockout responses (${((count429/total)*100).toFixed(1)}%)`;
+
+    // Status breakdown rows
+    DOM.pdfStatusBreakdownBody.innerHTML = `
+      <tr>
+        <td>HTTP 2xx Success</td>
+        <td>${count2xx}</td>
+        <td>${((count2xx/total)*100).toFixed(1)}%</td>
+        <td style="color: #16a34a; font-weight: 700;">Healthy OK</td>
+      </tr>
+      <tr>
+        <td>HTTP 429 Rate Limited</td>
+        <td>${count429}</td>
+        <td>${((count429/total)*100).toFixed(1)}%</td>
+        <td style="color: #d97706; font-weight: 700;">${count429 > 0 ? 'Throttled' : 'None'}</td>
+      </tr>
+      <tr>
+        <td>HTTP 4xx Client Errors</td>
+        <td>${count4xx}</td>
+        <td>${((count4xx/total)*100).toFixed(1)}%</td>
+        <td style="color: #ea580c;">${count4xx > 0 ? 'Client Error' : 'Clean'}</td>
+      </tr>
+      <tr>
+        <td>HTTP 5xx Server Errors</td>
+        <td>${count5xx}</td>
+        <td>${((count5xx/total)*100).toFixed(1)}%</td>
+        <td style="color: #dc2626;">${count5xx > 0 ? 'Server Fault' : 'Clean'}</td>
+      </tr>
+      <tr>
+        <td>Network / CORS Failures</td>
+        <td>${countFail}</td>
+        <td>${((countFail/total)*100).toFixed(1)}%</td>
+        <td>${countFail > 0 ? 'Connection Dropped' : 'Stable'}</td>
+      </tr>
+    `;
+
+    // Generate PDF using html2pdf
+    const element = document.getElementById('pdf-report-template');
+    element.style.display = 'block';
+
+    const cleanHost = cleanHostname(DOM.targetUrl.value);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const filename = `API_Audit_Report_${cleanHost}_${dateStr}.pdf`;
+
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    await html2pdf().set(opt).from(element).save();
+    element.style.display = 'none';
+
+  } catch (pdfErr) {
+    alert('PDF Generation Error: ' + pdfErr.message);
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+}
+
+// Helpers
 function getHeadersFromUI() {
   const headers = {};
-  DOM.headersList.querySelectorAll('.header-row').forEach(row => {
+  DOM.headersList.querySelectorAll('.header-item').forEach(row => {
     const key = row.querySelector('.header-key').value.trim();
     const val = row.querySelector('.header-val').value.trim();
     if (key) headers[key] = val;
@@ -1041,7 +1476,6 @@ function getHeadersFromUI() {
   return headers;
 }
 
-// Export CSV
 function exportCsv() {
   if (state.results.length === 0) {
     alert('No results to export yet.');
@@ -1072,13 +1506,12 @@ function exportCsv() {
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement('a');
   link.setAttribute('href', encodedUri);
-  link.setAttribute('download', `api_load_test_${Date.now()}.csv`);
+  link.setAttribute('download', `api_pulse_${cleanHostname(DOM.targetUrl.value)}_${Date.now()}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 }
 
-// Export JSON
 function exportJson() {
   if (state.results.length === 0) {
     alert('No results to export yet.');
@@ -1086,6 +1519,12 @@ function exportJson() {
   }
 
   const exportData = {
+    metadata: {
+      generatedAt: new Date().toISOString(),
+      tool: 'API Pulse Pro',
+      endpoint: DOM.targetUrl.value,
+      method: DOM.httpMethod.value
+    },
     summary: {
       totalRequests: state.results.length,
       successRate: DOM.mSuccessRate.textContent,
@@ -1093,6 +1532,7 @@ function exportJson() {
       clientErrors: DOM.m4xx.textContent,
       serverErrors: DOM.m5xx.textContent,
       rps: DOM.mRps.textContent,
+      peakRps: DOM.mPeakRps.textContent,
       avgLatency: DOM.mLatencyAvg.textContent,
       minLatency: DOM.mLatencyMin.textContent,
       maxLatency: DOM.mLatencyMax.textContent,
@@ -1107,10 +1547,26 @@ function exportJson() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
   const link = document.createElement('a');
   link.setAttribute('href', dataStr);
-  link.setAttribute('download', `api_load_test_${Date.now()}.json`);
+  link.setAttribute('download', `api_pulse_${cleanHostname(DOM.targetUrl.value)}_${Date.now()}.json`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+function cleanHostname(url) {
+  try {
+    return new URL(url).hostname.replace(/[^a-zA-Z0-9]/g, '_');
+  } catch (e) {
+    return 'benchmark';
+  }
+}
+
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 }
 
 function sleep(ms) {
