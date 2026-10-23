@@ -1,6 +1,6 @@
 /**
- * API Pulse Pro - Client-Side Observability & Load Testing Engine
- * 100% Browser Executed & Production Ready
+ * Pulse - Browser-Based API Observability & Load Testing Engine
+ * Free plan: current-session, browser-based testing
  */
 
 // Application Global State
@@ -14,7 +14,6 @@ const state = {
   concurrency: 5,
   delayMs: 0,
   stopOn429: true,
-  useCorsProxy: false,
   
   // Execution Counters & Timing
   requestIndex: 0,
@@ -61,7 +60,6 @@ const DOM = {
   systemStatusText: document.getElementById('system-status-text'),
   
   // Config
-  corsProxyToggle: document.getElementById('cors-proxy'),
   httpMethod: document.getElementById('http-method'),
   targetUrl: document.getElementById('target-url'),
   totalRequestsInput: document.getElementById('total-requests'),
@@ -127,7 +125,7 @@ const DOM = {
   // Table & Action Toolbar
   logsTbody: document.getElementById('logs-tbody'),
   logCount: document.getElementById('log-count'),
-  btnGeneratePdf: document.getElementById('btn-generate-pdf'),
+
   btnExportCsv: document.getElementById('btn-export-csv'),
   btnExportJson: document.getElementById('btn-export-json'),
   
@@ -148,30 +146,6 @@ const DOM = {
   modalResponseBody: document.getElementById('modal-response-body'),
   modalAllHeaders: document.getElementById('modal-all-headers'),
   btnCopyResponse: document.getElementById('btn-copy-response'),
-  
-  // PDF Report Elements
-  pdfReportTemplate: document.getElementById('pdf-report-template'),
-  pdfSlaGrade: document.getElementById('pdf-sla-grade'),
-  pdfTargetUrl: document.getElementById('pdf-target-url'),
-  pdfTimestamp: document.getElementById('pdf-timestamp'),
-  pdfMethod: document.getElementById('pdf-method'),
-  pdfConcurrency: document.getElementById('pdf-concurrency'),
-  pdfTotalRequests: document.getElementById('pdf-total-requests'),
-  pdfSuccessRate: document.getElementById('pdf-success-rate'),
-  pdfThroughput: document.getElementById('pdf-throughput'),
-  pdfAvgLatency: document.getElementById('pdf-avg-latency'),
-  pdfLatMin: document.getElementById('pdf-lat-min'),
-  pdfLatP50: document.getElementById('pdf-lat-p50'),
-  pdfLatP90: document.getElementById('pdf-lat-p90'),
-  pdfLatP95: document.getElementById('pdf-lat-p95'),
-  pdfLatP99: document.getElementById('pdf-lat-p99'),
-  pdfLatMax: document.getElementById('pdf-lat-max'),
-  pdfRlDetected: document.getElementById('pdf-rl-detected'),
-  pdfRlLimit: document.getElementById('pdf-rl-limit'),
-  pdfRlBreach: document.getElementById('pdf-rl-breach'),
-  pdfRlSafeRps: document.getElementById('pdf-rl-safe-rps'),
-  pdfRlCount: document.getElementById('pdf-rl-count'),
-  pdfStatusBreakdownBody: document.getElementById('pdf-status-breakdown-body')
 };
 
 // Bootstrap App
@@ -365,11 +339,6 @@ function bindEvents() {
     DOM.delayVal.textContent = `${e.target.value}ms`;
   });
 
-  // CORS Proxy
-  DOM.corsProxyToggle.addEventListener('change', (e) => {
-    state.useCorsProxy = e.target.checked;
-  });
-
   // Subtabs
   document.querySelectorAll('.subtab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -457,8 +426,12 @@ function bindEvents() {
     });
   });
 
-  // Report & Export Toolbar
-  DOM.btnGeneratePdf.addEventListener('click', generatePdfReport);
+  DOM.logsTbody.addEventListener('click', (event) => {
+    const inspectButton = event.target.closest('[data-request-id]');
+    if (inspectButton) viewDetails(Number(inspectButton.dataset.requestId));
+  });
+
+  // Export Toolbar
   DOM.btnExportCsv.addEventListener('click', exportCsv);
   DOM.btnExportJson.addEventListener('click', exportJson);
   DOM.btnShareConfig.addEventListener('click', shareConfiguration);
@@ -519,22 +492,11 @@ function applyPreset(name) {
     DOM.totalRequestsInput.value = 1000;
     DOM.requestCountDisplay.textContent = '1,000';
     DOM.statTotal.textContent = '1,000';
-    DOM.concurrencySlider.value = 25;
-    DOM.concurrencyVal.textContent = '25';
+    DOM.concurrencySlider.value = 10;
+    DOM.concurrencyVal.textContent = '10';
     DOM.delaySlider.value = 0;
     DOM.delayVal.textContent = '0ms';
     DOM.stopOn429.checked = false;
-  } else if (name === 'stress-5000') {
-    DOM.httpMethod.value = 'GET';
-    DOM.httpMethod.setAttribute('data-method', 'GET');
-    DOM.targetUrl.value = 'https://jsonplaceholder.typicode.com/posts/1';
-    DOM.totalRequestsInput.value = 5000;
-    DOM.requestCountDisplay.textContent = '5,000';
-    DOM.statTotal.textContent = '5,000';
-    DOM.concurrencySlider.value = 40;
-    DOM.concurrencyVal.textContent = '40';
-    DOM.delaySlider.value = 0;
-    DOM.delayVal.textContent = '0ms';
   } else if (name === 'post-echo') {
     DOM.httpMethod.value = 'POST';
     DOM.httpMethod.setAttribute('data-method', 'POST');
@@ -723,8 +685,7 @@ async function startTest() {
   try { parsedUrl = new URL(rawUrl); } catch { alert('Enter a valid HTTP or HTTPS URL.'); return; }
   if (!['http:', 'https:'].includes(parsedUrl.protocol) || parsedUrl.username || parsedUrl.password) { alert('Use an HTTP or HTTPS URL without embedded credentials.'); return; }
   const requested = Number(DOM.totalRequestsInput.value), concurrency = Number(DOM.concurrencySlider.value), delay = Number(DOM.delaySlider.value);
-  if (!Number.isInteger(requested) || requested < 1 || requested > 50000 || !Number.isInteger(concurrency) || concurrency < 1 || concurrency > 50 || !Number.isFinite(delay) || delay < 0 || delay > 1000) { alert('Enter 1–50,000 requests, 1–50 workers and a delay of 0–1,000 ms.'); return; }
-  if (DOM.corsProxyToggle.checked && !confirm('Requests, including headers and body, will be sent through the third-party corsproxy.io service. Continue only if you trust it with this data.')) return;
+  if (!Number.isInteger(requested) || requested < 1 || requested > 1000 || !Number.isInteger(concurrency) || concurrency < 1 || concurrency > 10 || !Number.isFinite(delay) || delay < 0 || delay > 1000) { alert('Free plan supports 1–1,000 requests, 1–10 workers, and a delay of 0–1,000 ms.'); return; }
   // Reset Run State
   state.isRunning = true;
   state.isPaused = false;
@@ -733,7 +694,6 @@ async function startTest() {
   state.concurrency = parseInt(DOM.concurrencySlider.value, 10) || 5;
   state.delayMs = parseInt(DOM.delaySlider.value, 10) || 0;
   state.stopOn429 = DOM.stopOn429.checked;
-  state.useCorsProxy = DOM.corsProxyToggle.checked;
   
   state.requestIndex = 0;
   state.completedCount = 0;
@@ -863,10 +823,7 @@ async function runWorker(workerId, url, method, headers, bodyTemplate) {
 // Client-side Browser Fetch
 async function executeSingleRequest(id, url, method, headers, body) {
   const reqStart = performance.now();
-  let targetUrl = url;
-  if (state.useCorsProxy) {
-    targetUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
-  }
+  const targetUrl = url;
 
   const timeout = new AbortController();
   const abort = () => timeout.abort();
@@ -927,7 +884,7 @@ async function executeSingleRequest(id, url, method, headers, body) {
       duration: duration,
       headers: {},
       rateLimitHeaders: {},
-      bodySnippet: err.name === 'AbortError' ? 'Request timed out after 30 seconds.' : (isCors ? 'Network request failed; the browser may have blocked it due to CORS.' : err.message),
+      bodySnippet: err.name === 'AbortError' ? 'Request timed out after 30 seconds.' : (isCors ? 'Network request failed. The target may block browser requests through CORS.' : err.message),
       isError: true
     };
   } finally {
@@ -1305,7 +1262,7 @@ function renderLogsTable() {
           ${preview}
         </td>
         <td>
-          <button class="btn-secondary" style="padding: 0.15rem 0.45rem; font-size: 0.7rem;" onclick="viewDetails(${item.id})">Inspect</button>
+          <button class="btn-secondary" style="padding: 0.15rem 0.45rem; font-size: 0.7rem;" data-request-id="${item.id}">Inspect</button>
         </td>
       </tr>
     `;
@@ -1315,7 +1272,7 @@ function renderLogsTable() {
 }
 
 // Request Inspector Modal
-window.viewDetails = function(reqId) {
+function viewDetails(reqId) {
   const item = state.results.find(r => r.id === reqId);
   if (!item) return;
 
@@ -1346,161 +1303,6 @@ window.viewDetails = function(reqId) {
 
   DOM.modalAllHeaders.textContent = JSON.stringify(item.headers, null, 2);
   DOM.detailModal.classList.add('active');
-};
-
-// ==========================================================================
-// Executive PDF Audit Report Generator
-// ==========================================================================
-async function generatePdfReport() {
-  if (state.results.length === 0) {
-    alert('Please execute an API test run first before generating an Audit Report.');
-    return;
-  }
-
-  if (typeof html2pdf === 'undefined') {
-    alert('PDF generation library is still loading. Please check your internet connection.');
-    return;
-  }
-
-  const btn = DOM.btnGeneratePdf;
-  const originalText = btn.innerHTML;
-  btn.innerHTML = '⏳ Compiling Audit PDF...';
-  btn.disabled = true;
-
-  try {
-    const total = state.results.length;
-    let count2xx = 0, count429 = 0, count4xx = 0, count5xx = 0, countFail = 0;
-    let latencySum = 0;
-    let latencies = [];
-
-    for (let i = 0; i < total; i++) {
-      const r = state.results[i];
-      latencies.push(r.duration);
-      latencySum += r.duration;
-
-      if (r.status >= 200 && r.status < 300) count2xx++;
-      else if (r.status === 429) count429++;
-      else if (r.status >= 400 && r.status < 500) count4xx++;
-      else if (r.status >= 500 && r.status < 600) count5xx++;
-      else countFail++;
-    }
-
-    latencies.sort((a, b) => a - b);
-    const avg = Math.round(latencySum / total);
-    const min = latencies[0];
-    const max = latencies[latencies.length - 1];
-    const p50 = latencies[Math.floor(latencies.length * 0.5)] || 0;
-    const p90 = latencies[Math.floor(latencies.length * 0.9)] || 0;
-    const p95 = latencies[Math.floor(latencies.length * 0.95)] || 0;
-    const p99 = latencies[Math.floor(latencies.length * 0.99)] || 0;
-
-    const elapsedSec = Math.max(0.1, (Date.now() - state.startTime) / 1000);
-    const rps = (total / elapsedSec).toFixed(1);
-    const successRate = ((count2xx / total) * 100).toFixed(1);
-
-    // Compute SLA Grade
-    let grade = 'GRADE A+';
-    let gradeClass = 'sla-grade-a';
-
-    if (count429 > 0 || successRate < 85) {
-      grade = 'GRADE F (BREACHED)';
-      gradeClass = 'sla-grade-f';
-    } else if (successRate < 95 || p95 > 1200) {
-      grade = 'GRADE C (EVALUATE)';
-      gradeClass = 'sla-grade-c';
-    } else if (successRate < 99 || p95 > 600) {
-      grade = 'GRADE B (ACCEPTABLE)';
-      gradeClass = 'sla-grade-b';
-    } else if (p95 > 350) {
-      grade = 'GRADE A (EXCELLENT)';
-      gradeClass = 'sla-grade-a';
-    }
-
-    // Populate PDF Template DOM
-    DOM.pdfSlaGrade.textContent = `Illustrative: ${grade}`;
-    DOM.pdfSlaGrade.className = `pdf-badge-sla ${gradeClass}`;
-    DOM.pdfTargetUrl.textContent = state.runConfig.url;
-    DOM.pdfTimestamp.textContent = new Date().toLocaleString();
-    DOM.pdfMethod.textContent = state.runConfig.method;
-    DOM.pdfConcurrency.textContent = `${state.runConfig.concurrency} workers (Delay: ${state.runConfig.delay}ms)`;
-
-    DOM.pdfTotalRequests.textContent = total.toLocaleString();
-    DOM.pdfSuccessRate.textContent = `${successRate}%`;
-    DOM.pdfThroughput.textContent = `${rps} req/s`;
-    DOM.pdfAvgLatency.textContent = `${avg} ms`;
-
-    DOM.pdfLatMin.textContent = `${min} ms`;
-    DOM.pdfLatP50.textContent = `${p50} ms`;
-    DOM.pdfLatP90.textContent = `${p90} ms`;
-    DOM.pdfLatP95.textContent = `${p95} ms`;
-    DOM.pdfLatP99.textContent = `${p99} ms`;
-    DOM.pdfLatMax.textContent = `${max} ms`;
-
-    DOM.pdfRlDetected.textContent = state.rateLimit.detected ? 'Active (X-RateLimit Headers Found)' : 'None Detected on Target';
-    DOM.pdfRlLimit.textContent = state.rateLimit.limit ? `${state.rateLimit.limit} req / window` : 'Not detected';
-    DOM.pdfRlBreach.textContent = state.rateLimit.firstBreachIndex ? `Hit at Request #${state.rateLimit.firstBreachIndex} (${state.rateLimit.firstBreachTime})` : 'Zero Breaches Detected';
-    DOM.pdfRlSafeRps.textContent = state.rateLimit.sustainableRps ? `${state.rateLimit.sustainableRps} requests/sec` : 'Not detected';
-    DOM.pdfRlCount.textContent = `${count429} lockout responses (${((count429/total)*100).toFixed(1)}%)`;
-
-    // Status breakdown rows
-    DOM.pdfStatusBreakdownBody.innerHTML = `
-      <tr>
-        <td>HTTP 2xx Success</td>
-        <td>${count2xx}</td>
-        <td>${((count2xx/total)*100).toFixed(1)}%</td>
-        <td style="color: #16a34a; font-weight: 700;">Healthy OK</td>
-      </tr>
-      <tr>
-        <td>HTTP 429 Rate Limited</td>
-        <td>${count429}</td>
-        <td>${((count429/total)*100).toFixed(1)}%</td>
-        <td style="color: #d97706; font-weight: 700;">${count429 > 0 ? 'Throttled' : 'None'}</td>
-      </tr>
-      <tr>
-        <td>HTTP 4xx Client Errors</td>
-        <td>${count4xx}</td>
-        <td>${((count4xx/total)*100).toFixed(1)}%</td>
-        <td style="color: #ea580c;">${count4xx > 0 ? 'Client Error' : 'Clean'}</td>
-      </tr>
-      <tr>
-        <td>HTTP 5xx Server Errors</td>
-        <td>${count5xx}</td>
-        <td>${((count5xx/total)*100).toFixed(1)}%</td>
-        <td style="color: #dc2626;">${count5xx > 0 ? 'Server Fault' : 'Clean'}</td>
-      </tr>
-      <tr>
-        <td>Network / CORS Failures</td>
-        <td>${countFail}</td>
-        <td>${((countFail/total)*100).toFixed(1)}%</td>
-        <td>${countFail > 0 ? 'Connection Dropped' : 'Stable'}</td>
-      </tr>
-    `;
-
-    // Generate PDF using html2pdf
-    const element = document.getElementById('pdf-report-template');
-    element.style.display = 'block';
-
-    const cleanHost = cleanHostname(DOM.targetUrl.value);
-    const dateStr = new Date().toISOString().slice(0, 10);
-    const filename = `API_Audit_Report_${cleanHost}_${dateStr}.pdf`;
-
-    const opt = {
-      margin: [10, 10, 10, 10],
-      filename: filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    await html2pdf().set(opt).from(element).save();
-    element.style.display = 'none';
-
-  } catch (pdfErr) {
-    alert('PDF Generation Error: ' + pdfErr.message);
-  } finally {
-    btn.innerHTML = originalText;
-    btn.disabled = false;
-  }
 }
 
 // Helpers
@@ -1559,7 +1361,7 @@ function exportJson() {
   const exportData = {
     metadata: {
       generatedAt: new Date().toISOString(),
-      tool: 'API Pulse Pro',
+      tool: 'Pulse',
       endpoint: DOM.targetUrl.value,
       method: DOM.httpMethod.value
     },

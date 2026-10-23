@@ -3,12 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>API Pulse Pro - Load Tester & Rate Limit Inspector</title>
+  <title>Pulse — Browser API Load Tester</title>
   <link rel="stylesheet" href="style.css">
   <!-- Chart.js for real-time performance graphs -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-  <!-- html2pdf.js for Client-Side Executive PDF Report Generation -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="chart.umd.min.js"></script>
 </head>
 <body>
   <div class="app-wrapper">
@@ -42,7 +40,7 @@
 
     <div class="workspace-heading"><div><div class="eyebrow">WORKSPACE / LOAD TESTING</div><h2>API performance</h2><p>Configure a test and inspect how your endpoint responds under load.</p></div><div class="workspace-label"><span></span> Browser-based testing</div></div>
 
-    <div class="workspace-heading"><div><div class="eyebrow">WORKSPACE / LOAD TESTING</div><h2>API performance</h2><p>Configure a test and inspect how your endpoint responds under load.</p></div><div class="workspace-label"><span></span> Browser-based testing</div></div>
+
 
     <!-- Quick Presets Launchpad -->
     <div class="preset-container">
@@ -50,9 +48,22 @@
       <button class="preset-tag active" data-preset="json-get-100">Sample API</button>
       <button class="preset-tag" data-preset="rate-limit-demo">Rate limit demo</button>
       <button class="preset-tag" data-preset="burst-1000">1,000 requests</button>
-      <button class="preset-tag" data-preset="stress-5000">5,000 requests</button>
       <button class="preset-tag" data-preset="post-echo">POST request</button>
     </div>
+
+    <section class="plan-note" aria-label="Free plan information">
+      <div>
+        <p class="eyebrow">EARLY ACCESS</p>
+        <h3>Free plan</h3>
+        <p>1,000 requests per test · 10 concurrent workers · manual browser runs · current-session results.</p>
+      </div>
+      <div class="plan-note-divider" aria-hidden="true"></div>
+      <div>
+        <p class="eyebrow">COMING SOON</p>
+        <h3>Pro plan</h3>
+        <p>Saved history, scheduled checks, alerts, team workspaces, and controlled cloud runs.</p>
+      </div>
+    </section>
 
     <!-- Main Workspace Grid -->
     <div class="main-layout">
@@ -61,11 +72,7 @@
         <div class="panel-card">
           <div class="panel-title">
             <span class="panel-title-text">Test configuration</span>
-            <label class="custom-switch" title="Toggle public CORS proxy if the target API restricts browser cross-origin calls">
-              <input type="checkbox" id="cors-proxy">
-              <span class="switch-track"></span>
-              <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);">CORS Proxy</span>
-            </label>
+            <span class="browser-only-note" title="Pulse sends requests directly from your browser.">Browser-only testing</span>
           </div>
 
           <!-- Method & URL -->
@@ -93,14 +100,12 @@
               <span>Total requests</span>
               <span id="request-count-display" style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-primary);">100</span>
             </div>
-            <input type="number" id="total-requests" class="ui-input" value="100" min="1" max="50000">
+            <input type="number" id="total-requests" class="ui-input" value="100" min="1" max="1000">
             <div class="pill-group">
               <button class="quick-pill" data-val="50">50</button>
               <button class="quick-pill active" data-val="100">100</button>
               <button class="quick-pill" data-val="500">500</button>
               <button class="quick-pill" data-val="1000">1,000</button>
-              <button class="quick-pill" data-val="5000">5,000</button>
-              <button class="quick-pill" data-val="10000">10,000</button>
             </div>
           </div>
 
@@ -111,7 +116,7 @@
               <span id="concurrency-val" class="slider-badge">5</span>
             </div>
             <div class="slider-wrap">
-              <input type="range" id="concurrency-slider" min="1" max="50" value="5">
+              <input type="range" id="concurrency-slider" min="1" max="10" value="5">
             </div>
             <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">
               Simultaneous in-flight requests running in parallel
@@ -324,10 +329,7 @@
               <button class="filter-chip" data-filter="failed">Network Err</button>
             </div>
             <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-              <button id="btn-generate-pdf" class="btn-secondary" style="background: var(--accent-gradient); color: white; border: none; font-weight: 700;">
-                PDF report
-              </button>
-              <button id="btn-export-csv" class="btn-secondary">CSV</button>
+<button id="btn-export-csv" class="btn-secondary">CSV</button>
               <button id="btn-export-json" class="btn-secondary">JSON</button>
             </div>
           </div>
@@ -417,154 +419,6 @@
     </div>
   </div>
 
-  <!-- Hidden Executive PDF Audit Report Template -->
-  <div id="pdf-report-wrapper" style="position: absolute; left: -9999px; top: -9999px;">
-    <div id="pdf-report-template">
-      <div class="pdf-header">
-        <div>
-          <div class="pdf-brand-title">⚡ API Pulse Performance & Rate-Limit Audit</div>
-          <div style="font-size: 0.85rem; color: #64748b; margin-top: 0.25rem;">Automated Service Level & Throughput Benchmark Report</div>
-        </div>
-        <div id="pdf-sla-grade" class="pdf-badge-sla sla-grade-a">Illustrative grade</div>
-      </div>
-
-      <table class="pdf-meta-table">
-        <tr>
-          <td style="font-weight: 700; width: 140px;">Target Endpoint:</td>
-          <td id="pdf-target-url" style="font-family: var(--font-mono);">https://api.example.com</td>
-          <td style="font-weight: 700; width: 120px;">Generated At:</td>
-          <td id="pdf-timestamp">2026-10-20</td>
-        </tr>
-        <tr>
-          <td style="font-weight: 700;">HTTP Method:</td>
-          <td id="pdf-method" style="font-family: var(--font-mono); font-weight: 700;">GET</td>
-          <td style="font-weight: 700;">Concurrency:</td>
-          <td id="pdf-concurrency">10 workers</td>
-        </tr>
-      </table>
-
-      <div class="pdf-section-heading">1. Executive Performance Summary</div>
-      <div class="pdf-summary-grid">
-        <div class="pdf-stat-card">
-          <div id="pdf-total-requests" class="pdf-stat-val">1,000</div>
-          <div class="pdf-stat-lbl">Total Requests</div>
-        </div>
-        <div class="pdf-stat-card">
-          <div id="pdf-success-rate" class="pdf-stat-val" style="color: #16a34a;">100%</div>
-          <div class="pdf-stat-lbl">Success Rate (2xx)</div>
-        </div>
-        <div class="pdf-stat-card">
-          <div id="pdf-throughput" class="pdf-stat-val" style="color: #0284c7;">85.4</div>
-          <div class="pdf-stat-lbl">Sustained RPS</div>
-        </div>
-        <div class="pdf-stat-card">
-          <div id="pdf-avg-latency" class="pdf-stat-val">284ms</div>
-          <div class="pdf-stat-lbl">Average Latency</div>
-        </div>
-      </div>
-
-      <div class="pdf-section-heading">2. Tail Latency & Percentiles Distribution</div>
-      <table class="pdf-data-table">
-        <thead>
-          <tr>
-            <th>Metric</th>
-            <th>Response Time</th>
-            <th>Illustrative benchmark</th>
-            <th>Compliance Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Min Response Time</td>
-            <td id="pdf-lat-min">20 ms</td>
-            <td>&lt; 100 ms</td>
-            <td style="color: #16a34a; font-weight: 700;">Optimal</td>
-          </tr>
-          <tr>
-            <td>p50 Median Response</td>
-            <td id="pdf-lat-p50">280 ms</td>
-            <td>&lt; 300 ms</td>
-            <td style="color: #16a34a; font-weight: 700;">Compliant</td>
-          </tr>
-          <tr>
-            <td>p90 Latency</td>
-            <td id="pdf-lat-p90">320 ms</td>
-            <td>&lt; 500 ms</td>
-            <td style="color: #16a34a; font-weight: 700;">Compliant</td>
-          </tr>
-          <tr>
-            <td>p95 Latency (95th %ile)</td>
-            <td id="pdf-lat-p95">380 ms</td>
-            <td>&lt; 800 ms</td>
-            <td style="color: #16a34a; font-weight: 700;">Compliant</td>
-          </tr>
-          <tr>
-            <td>p99 Latency (Tail)</td>
-            <td id="pdf-lat-p99">450 ms</td>
-            <td>&lt; 1,200 ms</td>
-            <td style="color: #16a34a; font-weight: 700;">Compliant</td>
-          </tr>
-          <tr>
-            <td>Max Peak Latency</td>
-            <td id="pdf-lat-max">500 ms</td>
-            <td>--</td>
-            <td>Peak Load</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="pdf-section-heading">3. Rate Limit & Quota Reach Autopsy</div>
-      <table class="pdf-data-table">
-        <tbody>
-          <tr>
-            <td style="width: 250px; font-weight: 700;">Rate Limit Headers Detected:</td>
-            <td id="pdf-rl-detected">None Detected</td>
-          </tr>
-          <tr>
-            <td style="font-weight: 700;">Window Capacity Limit:</td>
-            <td id="pdf-rl-limit">--</td>
-          </tr>
-          <tr>
-            <td style="font-weight: 700;">First Limit Breach (HTTP 429):</td>
-            <td id="pdf-rl-breach">No Breach Occurred</td>
-          </tr>
-          <tr>
-            <td style="font-weight: 700;">Maximum Sustainable Safe RPS:</td>
-            <td id="pdf-rl-safe-rps">--</td>
-          </tr>
-          <tr>
-            <td style="font-weight: 700;">HTTP 429 Lockouts Triggered:</td>
-            <td id="pdf-rl-count">0 requests</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="pdf-section-heading">4. HTTP Status Code Breakdown</div>
-      <table class="pdf-data-table">
-        <thead>
-          <tr>
-            <th>Status Code</th>
-            <th>Count</th>
-            <th>Percentage</th>
-            <th>Classification</th>
-          </tr>
-        </thead>
-        <tbody id="pdf-status-breakdown-body">
-          <tr>
-            <td>2xx Success</td>
-            <td id="pdf-c-2xx">0</td>
-            <td id="pdf-p-2xx">0%</td>
-            <td style="color: #16a34a;">Healthy</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="pdf-footer">
-        <div>Generated by API Pulse Pro &bull; Confidential Client Performance Benchmark</div>
-        <div>Page 1 of 1</div>
-      </div>
-    </div>
-  </div>
 
   <!-- Application Logic -->
   <script src="app.js"></script>
