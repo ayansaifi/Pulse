@@ -22,16 +22,6 @@
         </div>
       </div>
       <div class="header-tools">
-        <div class="status-pill" title="Runs 100% in your browser - no servers or signups required">
-          <span class="status-dot" id="system-dot"></span>
-          <span id="system-status-text">Engine ready</span>
-        </div>
-        <button id="btn-open-curl" class="btn-secondary" title="Import cURL command directly">
-          Import cURL
-        </button>
-        <button id="btn-share-config" class="btn-secondary" title="Share test configuration via link">
-          Share configuration
-        </button>
         <button id="theme-toggle" class="btn-secondary" title="Toggle Dark/Light theme">
           Theme
         </button>
@@ -366,29 +356,6 @@
           </div>
         </div>
       </main>
-    </div>
-  </div>
-
-  <!-- cURL Import Modal -->
-  <div id="curl-modal" class="modal-backdrop">
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3>Import cURL Command</h3>
-        <button id="btn-close-curl" class="modal-close-btn">&times;</button>
-      </div>
-      <div style="margin-bottom: 1rem;">
-        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.6rem;">
-          Paste any standard cURL command from your terminal, browser DevTools, or Postman:
-        </p>
-        <textarea id="curl-input" class="ui-textarea" rows="6" placeholder="curl -X POST https://api.example.com/v1/users \
-  -H 'Authorization: Bearer token123' \
-  -H 'Content-Type: application/json' \
-  -d '{&quot;name&quot;: &quot;Alex&quot;}'" style="font-family: var(--font-mono); font-size: 0.8rem;"></textarea>
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-        <button id="btn-cancel-curl" class="btn-secondary">Cancel</button>
-        <button id="btn-parse-curl" class="btn-cta btn-start" style="padding: 0.45rem 1.25rem; font-size: 0.85rem;">Parse & Load</button>
-      </div>
     </div>
   </div>
 

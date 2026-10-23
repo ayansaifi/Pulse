@@ -54,10 +54,6 @@ let statusChart = null;
 // DOM Cache
 const DOM = {
   themeToggle: document.getElementById('theme-toggle'),
-  btnOpenCurl: document.getElementById('btn-open-curl'),
-  btnShareConfig: document.getElementById('btn-share-config'),
-  systemDot: document.getElementById('system-dot'),
-  systemStatusText: document.getElementById('system-status-text'),
   
   // Config
   httpMethod: document.getElementById('http-method'),
@@ -129,14 +125,7 @@ const DOM = {
 
   btnExportCsv: document.getElementById('btn-export-csv'),
   btnExportJson: document.getElementById('btn-export-json'),
-  
-  // cURL Modal
-  curlModal: document.getElementById('curl-modal'),
-  btnCloseCurl: document.getElementById('btn-close-curl'),
-  btnCancelCurl: document.getElementById('btn-cancel-curl'),
-  curlInput: document.getElementById('curl-input'),
-  btnParseCurl: document.getElementById('btn-parse-curl'),
-  
+
   // Detail Modal
   detailModal: document.getElementById('detail-modal'),
   btnCloseModal: document.getElementById('btn-close-modal'),
@@ -154,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   if (typeof Chart === 'undefined') { DOM.statusBadge.textContent = 'Charts unavailable; reload'; DOM.btnStart.disabled = true; return; }
   initCharts();
-  loadSharedConfig();
   bindEvents();
 });
 
@@ -445,13 +433,6 @@ function bindEvents() {
   // Export Toolbar
   DOM.btnExportCsv.addEventListener('click', exportCsv);
   DOM.btnExportJson.addEventListener('click', exportJson);
-  DOM.btnShareConfig.addEventListener('click', shareConfiguration);
-
-  // cURL Modal Events
-  DOM.btnOpenCurl.addEventListener('click', () => DOM.curlModal.classList.add('active'));
-  DOM.btnCloseCurl.addEventListener('click', () => DOM.curlModal.classList.remove('active'));
-  DOM.btnCancelCurl.addEventListener('click', () => DOM.curlModal.classList.remove('active'));
-  DOM.btnParseCurl.addEventListener('click', parseCurlCommand);
 
   // Details Modal Events
   DOM.btnCloseModal.addEventListener('click', () => DOM.detailModal.classList.remove('active'));
@@ -527,159 +508,6 @@ function applyPreset(name) {
   setRequestCount(DOM.totalRequestsInput.value);
 }
 
-// cURL Parser
-function parseCurlCommand() {
-  const raw = DOM.curlInput.value.trim();
-  if (!raw) return;
-
-  try {
-    // Extract Method
-    let method = 'GET';
-    const methodMatch = raw.match(/-X\s+([A-Z]+)/i) || raw.match(/--request\s+([A-Z]+)/i);
-    if (methodMatch) {
-      method = methodMatch[1].toUpperCase();
-    } else if (raw.includes('-d ') || raw.includes('--data') || raw.includes('--data-raw')) {
-      method = 'POST';
-    }
-
-    // Extract URL
-    let url = '';
-    const urlMatch = raw.match(/curl\s+(?:-[^\s]+\s+)*['"]?(https?:\/\/[^\s'"\\]+)/i);
-    if (urlMatch) {
-      url = urlMatch[1];
-    } else {
-      const anyUrl = raw.match(/https?:\/\/[^\s'"]+/);
-      if (anyUrl) url = anyUrl[0];
-    }
-
-    if (!url) {
-      alert('Could not find a valid HTTP/HTTPS URL in the cURL command.');
-      return;
-    }
-
-    // Extract Headers
-    const headers = {};
-    const headerRegex = /(?:-H|--header)\s+['"]([^'"]+)['"]/g;
-    let match;
-    while ((match = headerRegex.exec(raw)) !== null) {
-      const parts = match[1].split(':');
-      if (parts.length >= 2) {
-        const key = parts[0].trim();
-        const val = parts.slice(1).join(':').trim();
-        headers[key] = val;
-      }
-    }
-
-    // Extract Data Body
-    let body = '';
-    const dataMatch = raw.match(/(?:-d|--data|--data-raw)\s+['"]([\s\S]*?)['"](?:\s+-[A-Za-z]|$)/);
-    if (dataMatch) {
-      body = dataMatch[1];
-    }
-
-    // Populate UI
-    DOM.httpMethod.value = method;
-    DOM.httpMethod.setAttribute('data-method', method);
-    DOM.targetUrl.value = url;
-
-    // Populate Headers
-    DOM.headersList.innerHTML = '';
-    const headerEntries = Object.entries(headers);
-    if (headerEntries.length === 0) {
-      DOM.headersList.innerHTML = `
-        <div class="header-item">
-          <input type="text" class="ui-input header-key" placeholder="Key" value="Accept">
-          <input type="text" class="ui-input header-val" placeholder="Value" value="application/json">
-          <button type="button" class="btn-icon-danger">&times;</button>
-        </div>
-      `;
-    } else {
-      headerEntries.forEach(([k, v]) => {
-        const row = document.createElement('div');
-        row.className = 'header-item';
-        row.innerHTML = `
-          <input type="text" class="ui-input header-key" value="${escapeHtml(k)}">
-          <input type="text" class="ui-input header-val" value="${escapeHtml(v)}">
-          <button type="button" class="btn-icon-danger">&times;</button>
-        `;
-        DOM.headersList.appendChild(row);
-      });
-    }
-    updateHeaderCount();
-
-    if (body) {
-      try {
-        DOM.requestBody.value = JSON.stringify(JSON.parse(body), null, 2);
-      } catch (e) {
-        DOM.requestBody.value = body;
-      }
-    }
-
-    DOM.curlModal.classList.remove('active');
-    alert(`Successfully imported cURL! Loaded ${method} to ${url}`);
-  } catch (err) {
-    alert('Error parsing cURL: ' + err.message);
-  }
-}
-
-// Share Configuration via URL
-function shareConfiguration() {
-  // URLs, headers and bodies may contain secrets. Only share non-sensitive settings.
-  const config = {
-    method: DOM.httpMethod.value,
-    req: DOM.totalRequestsInput.value,
-    con: DOM.concurrencySlider.value,
-    del: DOM.delaySlider.value
-  };
-  const encoded = encodeURIComponent(JSON.stringify(config));
-  const shareUrl = `${window.location.origin}${window.location.pathname}#config=${encoded}`;
-
-  navigator.clipboard.writeText(shareUrl).then(() => {
-    alert('Settings copied. The endpoint, headers and body were excluded to protect sensitive data.');
-  }).catch(() => alert('Could not copy the link. Check browser clipboard permissions.'));
-}
-
-function loadSharedConfig() {
-  if (!window.location.hash || !window.location.hash.includes('config=')) return;
-  try {
-    const raw = window.location.hash.split('config=')[1];
-    const config = JSON.parse(decodeURIComponent(raw));
-
-    if (config.method) {
-      DOM.httpMethod.value = config.method;
-      DOM.httpMethod.setAttribute('data-method', config.method);
-    }
-    if (config.url) DOM.targetUrl.value = config.url;
-    if (config.req) setRequestCount(config.req);
-    if (config.con) {
-      DOM.concurrencySlider.value = config.con;
-      DOM.concurrencyVal.textContent = config.con;
-    }
-    if (config.del) {
-      DOM.delaySlider.value = config.del;
-      DOM.delayVal.textContent = `${config.del}ms`;
-    }
-    if (config.body) DOM.requestBody.value = config.body;
-
-    if (config.headers && Object.keys(config.headers).length > 0) {
-      DOM.headersList.innerHTML = '';
-      Object.entries(config.headers).forEach(([k, v]) => {
-        const row = document.createElement('div');
-        row.className = 'header-item';
-        row.innerHTML = `
-          <input type="text" class="ui-input header-key" value="${escapeHtml(k)}">
-          <input type="text" class="ui-input header-val" value="${escapeHtml(v)}">
-          <button type="button" class="btn-icon-danger">&times;</button>
-        `;
-        DOM.headersList.appendChild(row);
-      });
-      updateHeaderCount();
-    }
-  } catch (e) {
-    console.error('Failed to parse shared config from URL hash', e);
-  }
-}
-
 // Start Load Test
 async function startTest() {
   const rawUrl = DOM.targetUrl.value.trim();
@@ -735,7 +563,6 @@ async function startTest() {
   DOM.btnStop.disabled = false;
   DOM.statusBadge.textContent = 'Dispatched';
   DOM.statusBadge.style.color = 'var(--accent-primary)';
-  DOM.systemDot.className = 'status-dot active';
   DOM.statTotal.textContent = state.totalRequests.toLocaleString();
   
   DOM.rateLimitPanel.classList.remove('breached');
@@ -1154,7 +981,6 @@ function finishTest() {
   state.isRunning = false;
   if (state.isStopped && DOM.statusBadge.textContent === 'Stopping…') DOM.statusBadge.textContent = 'Stopped';
   if (state.elapsedInterval) clearInterval(state.elapsedInterval);
-  DOM.systemDot.className = 'status-dot';
   
   DOM.btnStart.disabled = false;
   DOM.btnPause.disabled = true;

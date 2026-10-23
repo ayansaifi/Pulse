@@ -14,7 +14,7 @@ Pro is coming soon with saved history, scheduled checks, alerts, team workspaces
 
 ## Run locally or on Cloudflare Pages
 
-Serve this directory over HTTP or HTTPS and open `index.html`. All application assets are self-hosted. Clipboard sharing requires a secure context (HTTPS or localhost). Cloudflare Pages applies the headers in `_headers`.
+Serve this directory over HTTP or HTTPS and open `index.html`. All application assets are self-hosted. Cloudflare Pages applies the headers in `_headers`.
 
 ## How it works
 
@@ -24,10 +24,10 @@ Only test endpoints you are authorized to test. Browser connection limits, CORS,
 
 ## Sensitive data
 
-Share links include only method, volume, concurrency and delay. They do not include the endpoint, headers or body. Do not put secrets in URLs. Exported results can contain endpoint URLs, response headers and response snippets; handle them as sensitive data.
+Do not put secrets in URLs. Exported results can contain endpoint URLs, response headers and response snippets; handle them as sensitive data.
 
 Rate-limit reset values are interpreted heuristically and may vary by API.
 
 ## Verify
 
-Run `node tests/run.js` for focused checks of sharing, Free-plan limits, and cancellation. This does not replace browser compatibility, accessibility, security, or real-network testing.
+Run `node tests/run.js` for focused checks of Free-plan limits and cancellation. This does not replace browser compatibility, accessibility, security, or real-network testing.
