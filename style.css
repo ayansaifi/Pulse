@@ -1231,13 +1231,16 @@ body { background:var(--bg-app); }
 @media(max-width:920px) { .app-wrapper { padding:0 22px 36px; } .app-header { margin:0 -22px; padding:12px 22px; } .workspace-heading { min-height:190px; padding:29px; } .workspace-proof { max-width:220px; } .main-layout { grid-template-columns:1fr; } .plan-note { grid-template-columns:155px 1fr 1fr; } .sidebar-workspace { position:static; } }
 @media(max-width:740px) { .workspace-heading { align-items:flex-start; flex-direction:column; gap:20px; } .workspace-heading h2 { font-size:2rem; } .workspace-proof { max-width:none; } .preset-container { align-items:flex-start; flex-wrap:wrap; } .preset-heading { width:100%; margin:0 0 5px; } .plan-note { grid-template-columns:1fr 1fr; } .plan-section-heading { grid-column:1/-1; padding:4px 0; } .charts-row { grid-template-columns:1fr; } .quota-stats-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:13px 0; } .quota-stat-box:nth-child(3n) { border-right:0; } }
 @media(max-width:560px) { .app-wrapper { padding:0 14px 28px; } .app-header { margin:0 -14px; padding:11px 14px; } .brand-text p { display:none; } .header-tools { gap:2px; } .workspace-heading { min-height:0; margin:16px 0 14px; padding:24px 21px; } .workspace-heading h2 { font-size:1.78rem; } .workspace-heading p { max-width:310px; font-size:.74rem; } .workspace-proof { width:100%; } .plan-note { grid-template-columns:1fr; } .plan-section-heading { grid-column:auto; } .plan-card { min-height:0; } .preset-tag { padding:7px 9px; font-size:.64rem; } .sidebar-workspace > .panel-card { padding:16px; } .kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; } .kpi-card { min-height:100px; padding:12px; } .kpi-card:not(:nth-child(3n)) { border-right:1px solid var(--border-subtle); } .kpi-card:nth-child(odd) { border-right:1px solid var(--border-subtle); } .kpi-card:nth-child(-n+4) { border-bottom:1px solid var(--border-subtle); } .quota-stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .quota-stat-box,.quota-stat-box:first-child { padding:0; border:0; } .progress-meta-row { gap:8px 14px; } }
-/* Typography refinement: clearer hierarchy, calmer tracking, and readable dense data. */
+
+/* Pulse type system: editorial display type paired with crisp, practical UI text. */
 :root {
-  --font-sans: "Segoe UI Variable", "Segoe UI", Aptos, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-display: Georgia, "Times New Roman", serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
 body {
+  font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.55;
   font-feature-settings: "kern" 1, "liga" 1;
@@ -1245,59 +1248,72 @@ body {
 }
 
 .brand-text h1 {
-  font-size: 1.2rem;
-  font-weight: 720;
-  letter-spacing: -0.035em;
+  font-family: var(--font-display);
+  font-size: 1.42rem;
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: 1;
 }
 
 .brand-text p,
 .workspace-proof small {
-  font-size: 0.75rem;
-  line-height: 1.45;
+  font-size: 0.76rem;
+  line-height: 1.5;
 }
 
 .workspace-heading h2 {
-  max-width: 760px;
-  font-size: clamp(2.35rem, 4.2vw, 3.45rem);
-  font-weight: 680;
+  max-width: 780px;
+  font-family: var(--font-display);
+  font-size: clamp(2.65rem, 5vw, 4rem);
+  font-weight: 500;
   letter-spacing: -0.055em;
-  line-height: 1.04;
+  line-height: 1.02;
 }
 
 .workspace-heading p {
-  max-width: 56ch;
+  max-width: 58ch;
   font-size: 0.98rem;
-  line-height: 1.65;
+  line-height: 1.7;
 }
 
 .eyebrow,
 .section-index {
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
 }
 
 .preset-heading strong,
 .panel-title,
 .plan-card h3,
 .plan-note h3 {
-  font-size: 1rem;
-  font-weight: 660;
-  letter-spacing: -0.02em;
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.plan-card h3,
+.plan-note h3 {
+  font-family: var(--font-display);
+  font-size: 1.18rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
 }
 
 .preset-heading small,
 .plan-note p:not(.eyebrow),
 .request-limit-help,
 .browser-only-note {
-  font-size: 0.78rem;
-  line-height: 1.55;
+  font-size: 0.79rem;
+  line-height: 1.6;
 }
 
 .field-label,
 .workspace-label,
 .preset-label {
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.81rem;
+  font-weight: 700;
+  letter-spacing: 0.005em;
 }
 
 .ui-input,
@@ -1308,7 +1324,9 @@ body {
 .preset-tag,
 .quick-pill,
 .filter-chip {
+  font-family: var(--font-sans);
   font-size: 0.82rem;
+  letter-spacing: 0.005em;
 }
 
 .kpi-caption,
@@ -1320,34 +1338,35 @@ body {
 .stream-table th,
 .stream-table td,
 .filter-chip {
-  font-size: 0.72rem;
+  font-size: 0.73rem;
   letter-spacing: 0;
 }
 
 .kpi-number {
+  font-family: var(--font-sans);
   font-size: clamp(1.45rem, 2vw, 1.8rem);
-  font-weight: 650;
-  letter-spacing: -0.04em;
-  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 .quota-stat-value,
 .request-volume-input,
 .request-count-value,
 .log-count-badge {
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 .stream-table th {
-  font-weight: 650;
+  font-weight: 700;
 }
 
 .stream-table td {
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 @media (max-width: 740px) {
   body { font-size: 14px; }
-  .workspace-heading h2 { font-size: clamp(2rem, 8vw, 2.65rem); }
+  .workspace-heading h2 { font-size: clamp(2.25rem, 9vw, 3rem); }
   .workspace-heading p { font-size: 0.9rem; }
 }
