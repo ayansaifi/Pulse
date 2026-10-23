@@ -64,6 +64,7 @@ const DOM = {
   targetUrl: document.getElementById('target-url'),
   totalRequestsInput: document.getElementById('total-requests'),
   requestCountDisplay: document.getElementById('request-count-display'),
+  requestCapacityFill: document.getElementById('request-capacity-fill'),
   concurrencySlider: document.getElementById('concurrency-slider'),
   concurrencyVal: document.getElementById('concurrency-val'),
   delaySlider: document.getElementById('delay-slider'),
@@ -296,6 +297,18 @@ function initCharts() {
 }
 
 // Bind Event Listeners
+// Keep the displayed Free allowance, quick picks and input value in sync.
+function setRequestCount(value) {
+  const count = Math.max(1, Math.min(1000, Math.floor(Number(value) || 1)));
+  DOM.totalRequestsInput.value = count;
+  DOM.requestCountDisplay.textContent = count.toLocaleString();
+  DOM.statTotal.textContent = count.toLocaleString();
+  DOM.requestCapacityFill.style.width = `${(count / 1000) * 100}%`;
+  document.querySelectorAll('.quick-pill').forEach(pill => {
+    pill.classList.toggle('active', Number(pill.getAttribute('data-val')) === count);
+  });
+}
+
 function bindEvents() {
   // Method select color change
   DOM.httpMethod.addEventListener('change', (e) => {
@@ -314,19 +327,17 @@ function bindEvents() {
   // Quick Volume Pills
   document.querySelectorAll('.quick-pill').forEach(pill => {
     pill.addEventListener('click', () => {
-      document.querySelectorAll('.quick-pill').forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      const val = parseInt(pill.getAttribute('data-val'), 10);
-      DOM.totalRequestsInput.value = val;
-      DOM.requestCountDisplay.textContent = val.toLocaleString();
-      DOM.statTotal.textContent = val.toLocaleString();
+      const val = Number(pill.getAttribute('data-val'));
+      setRequestCount(val);
     });
   });
 
   DOM.totalRequestsInput.addEventListener('input', (e) => {
-    const val = parseInt(e.target.value, 10) || 1;
-    DOM.requestCountDisplay.textContent = val.toLocaleString();
-    DOM.statTotal.textContent = val.toLocaleString();
+    if (e.target.value === '') return;
+    setRequestCount(Number(e.target.value));
+  });
+  DOM.totalRequestsInput.addEventListener('blur', () => {
+    setRequestCount(Number(DOM.totalRequestsInput.value) || 1);
   });
 
   // Concurrency slider
@@ -513,6 +524,7 @@ function applyPreset(name) {
       uuid: '{{uuid}}'
     }, null, 2);
   }
+  setRequestCount(DOM.totalRequestsInput.value);
 }
 
 // cURL Parser
@@ -638,11 +650,7 @@ function loadSharedConfig() {
       DOM.httpMethod.setAttribute('data-method', config.method);
     }
     if (config.url) DOM.targetUrl.value = config.url;
-    if (config.req) {
-      DOM.totalRequestsInput.value = config.req;
-      DOM.requestCountDisplay.textContent = parseInt(config.req, 10).toLocaleString();
-      DOM.statTotal.textContent = parseInt(config.req, 10).toLocaleString();
-    }
+    if (config.req) setRequestCount(config.req);
     if (config.con) {
       DOM.concurrencySlider.value = config.con;
       DOM.concurrencyVal.textContent = config.con;

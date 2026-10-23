@@ -38,31 +38,37 @@
       </div>
     </header>
 
-    <div class="workspace-heading"><div><div class="eyebrow">WORKSPACE / LOAD TESTING</div><h2>API performance</h2><p>Configure a test and inspect how your endpoint responds under load.</p></div><div class="workspace-label"><span></span> Browser-based testing</div></div>
+    <section class="workspace-heading">
+      <div class="workspace-copy">
+        <div class="eyebrow">API OBSERVABILITY <span>/</span> LOAD TEST</div>
+        <h2>See how your API<br>holds up under pressure.</h2>
+        <p>Run a focused browser test, then dig into latency, throughput, and rate limits.</p>
+      </div>
+      <div class="workspace-proof"><div class="proof-mark"><span></span><span></span><span></span><span></span><span></span></div><div><strong>Runs from your browser</strong><small>No account. No test traffic routed through Pulse.</small></div></div>
+    </section>
 
 
 
     <!-- Quick Presets Launchpad -->
     <div class="preset-container">
-      <span class="preset-label">Quick start</span>
+      <div class="preset-heading"><span class="section-index">01</span><span><strong>Start with a preset</strong><small>Choose a scenario or configure your own</small></span></div>
       <button class="preset-tag active" data-preset="json-get-100">Sample API</button>
       <button class="preset-tag" data-preset="rate-limit-demo">Rate limit demo</button>
       <button class="preset-tag" data-preset="burst-1000">1,000 requests</button>
       <button class="preset-tag" data-preset="post-echo">POST request</button>
     </div>
 
-    <section class="plan-note" aria-label="Free plan information">
-      <div>
-        <p class="eyebrow">EARLY ACCESS</p>
-        <h3>Free plan</h3>
-        <p>1,000 requests per test · 10 concurrent workers · manual browser runs · current-session results.</p>
-      </div>
-      <div class="plan-note-divider" aria-hidden="true"></div>
-      <div>
-        <p class="eyebrow">COMING SOON</p>
-        <h3>Pro plan</h3>
-        <p>Saved history, scheduled checks, alerts, team workspaces, and controlled cloud runs.</p>
-      </div>
+    <section class="plan-note" aria-label="Pulse plans"><div class="plan-section-heading"><span class="section-index">02</span><span><strong>Plans</strong><small>Start free, upgrade when you need more</small></span></div>
+      <article class="plan-card plan-card-free">
+        <div class="plan-card-top"><span class="plan-status plan-status-live"><i></i> Available now</span><span class="plan-price">Free</span></div>
+        <h3>Everything you need to test an endpoint.</h3>
+        <p>1,000 requests per run · 10 workers · live metrics · CSV and JSON exports.</p>
+      </article>
+      <article class="plan-card plan-card-pro">
+        <div class="plan-card-top"><span class="plan-status plan-status-soon">On the roadmap</span><span class="plan-price">Pro</span></div>
+        <h3>Keep an eye on performance over time.</h3>
+        <p>Saved history · scheduled checks · alerts · shared team workspaces.</p>
+      </article>
     </section>
 
     <!-- Main Workspace Grid -->
@@ -71,7 +77,7 @@
       <aside class="sidebar-workspace">
         <div class="panel-card">
           <div class="panel-title">
-            <span class="panel-title-text">Test configuration</span>
+            <span class="panel-title-text"><span class="section-index">03</span><span>Test configuration</span></span>
             <span class="browser-only-note" title="Pulse sends requests directly from your browser.">Browser-only testing</span>
           </div>
 
@@ -98,10 +104,12 @@
           <div class="form-field">
             <div class="field-label">
               <span>Total requests</span>
-              <span id="request-count-display" style="font-family: var(--font-mono); font-weight: 700; color: var(--accent-primary);">100</span>
+              <span class="request-count-value"><span id="request-count-display">100</span><span class="request-count-limit">/ 1,000</span></span>
             </div>
-            <input type="number" id="total-requests" class="ui-input" value="100" min="1" max="1000">
-            <div class="pill-group">
+            <input type="number" id="total-requests" class="ui-input request-volume-input" value="100" min="1" max="1000" step="1" inputmode="numeric" aria-describedby="request-limit-help">
+            <div class="request-capacity" aria-hidden="true"><span id="request-capacity-fill"></span></div>
+            <p class="request-limit-help" id="request-limit-help">Free plan limit <strong>1,000 requests</strong> per run</p>
+            <div class="pill-group" aria-label="Quick request count">
               <button class="quick-pill" data-val="50">50</button>
               <button class="quick-pill active" data-val="100">100</button>
               <button class="quick-pill" data-val="500">500</button>
@@ -297,16 +305,16 @@
         <!-- Interactive Chart Visualizations -->
         <div class="charts-row">
           <div class="panel-card">
-            <h3 class="panel-title">
-              <span class="panel-title-text">Response latency</span>
+            <h3 class="panel-title chart-title">
+              <span class="panel-title-text"><span class="chart-heading-mark">↗</span>Response latency</span>
             </h3>
             <div class="chart-viewport">
               <canvas id="latencyChart"></canvas>
             </div>
           </div>
           <div class="panel-card">
-            <h3 class="panel-title">
-              <span class="panel-title-text">Response status</span>
+            <h3 class="panel-title chart-title">
+              <span class="panel-title-text"><span class="chart-heading-mark">◒</span>Response status</span>
             </h3>
             <div class="chart-viewport">
               <canvas id="statusChart"></canvas>
@@ -318,7 +326,7 @@
         <div class="panel-card">
           <div class="table-toolbar">
             <h3 class="panel-title" style="margin-bottom: 0;">
-              <span>Request log (<span id="log-count">0</span>)</span>
+              <span class="panel-title-text"><span class="section-index">04</span>Request log <span class="log-count-badge" id="log-count">0</span></span>
             </h3>
             <div class="filter-group">
               <button class="filter-chip active" data-filter="all">All</button>
