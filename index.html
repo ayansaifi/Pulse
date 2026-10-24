@@ -24,11 +24,17 @@
     <!-- Production Navbar -->
     <header class="app-header">
       <div class="brand-group">
-        <div class="brand-logo" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 36 36" focusable="false">
+            <path d="M5 18h7l3.1-8 5.1 16 3.2-8H31" />
+            <circle cx="5" cy="18" r="1.5" />
+            <circle cx="31" cy="18" r="1.5" />
+          </svg>
+        </div>
         <div class="brand-text">
-          <h1>
+          <div class="brand-name" aria-label="Pulse">
             <span>pulse<span class="brand-period">.</span></span>
-          </h1>
+          </div>
           <p>API performance workspace</p>
         </div>
       </div>
@@ -39,11 +45,13 @@
       </div>
     </header>
 
+    <a class="skip-link" href="#test-configuration">Skip to test configuration</a>
+
     <section class="workspace-heading">
       <div class="workspace-copy">
         <div class="eyebrow">API OBSERVABILITY <span>/</span> LOAD TEST</div>
-        <h2>See how your API<br>holds up under pressure.</h2>
-        <p>Run a focused browser test, then dig into latency, throughput, and rate limits.</p>
+        <h1>Test API performance<br>from your browser.</h1>
+        <p>Load test an endpoint and inspect response time, throughput, and rate limits—without sending test traffic through Pulse.</p>
       </div>
       <div class="workspace-proof"><div class="proof-mark"><span></span><span></span><span></span><span></span><span></span></div><div><strong>Runs from your browser</strong><small>No account. No test traffic routed through Pulse.</small></div></div>
     </section>
@@ -76,7 +84,7 @@
     <div class="main-layout">
       <!-- Left Column: Configuration Workspace -->
       <aside class="sidebar-workspace">
-        <div class="panel-card">
+        <div class="panel-card" id="test-configuration" tabindex="-1">
           <div class="panel-title">
             <span class="panel-title-text"><span class="section-index">03</span><span>Test configuration</span></span>
             <span class="browser-only-note" title="Pulse sends requests directly from your browser.">Browser-only testing</span>
