@@ -7,13 +7,27 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <meta name="description" content="Test an API's rate-limit behavior in your browser. See HTTP 429 responses, exposed quota headers, Retry-After guidance, and a shareable aggregate report with Pulse.">
   <link rel="canonical" href="https://apulse.tech/rate-limit-tester.html">
-  <meta property="og:type" content="website">
+  <meta property="og:type" content="article">
   <meta property="og:site_name" content="Pulse">
   <meta property="og:title" content="API Rate-Limit Tester and 429 Analyzer | Pulse">
   <meta property="og:description" content="Run a bounded browser test and understand HTTP 429, Retry-After, and exposed rate-limit headers.">
   <meta property="og:url" content="https://apulse.tech/rate-limit-tester.html">
   <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="API Rate-Limit Tester and 429 Analyzer | Pulse">
+  <meta name="twitter:description" content="Run a bounded browser test and understand HTTP 429, Retry-After, and exposed rate-limit headers.">
   <title>API Rate-Limit Tester and 429 Analyzer | Pulse</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Test API Rate Limits and Understand HTTP 429",
+    "description": "A practical guide to browser-based API rate-limit testing, HTTP 429, Retry-After, quota headers, and CORS.",
+    "mainEntityOfPage": "https://apulse.tech/rate-limit-tester.html",
+    "datePublished": "2026-10-27",
+    "dateModified": "2026-10-28",
+    "publisher": { "@type": "Organization", "name": "Pulse", "url": "https://apulse.tech/" }
+  }
+  </script>
   <link rel="stylesheet" href="style.css">
   <script src="guide-theme.js"></script>
 </head>
@@ -23,6 +37,7 @@
     <header class="guide-header">
       <a class="guide-brand" href="/" aria-label="Pulse home">pulse<span>.</span></a>
       <div class="guide-header-tools">
+        <a class="btn-secondary" href="api-load-testing.html">API load testing guide</a>
         <a class="btn-secondary" href="/#test-configuration">Open the tester →</a>
         <button id="guide-theme-toggle" class="btn-secondary" type="button">Dark mode</button>
       </div>
@@ -32,6 +47,7 @@
         <div class="eyebrow">FREE BROWSER TOOL / RATE LIMITS</div>
         <h1>Test API rate limits and understand HTTP 429.</h1>
         <p>Run a controlled series of requests from your browser. Pulse counts 429 responses, reads rate-limit headers your API exposes, and turns the run into a clear, shareable summary.</p>
+        <p class="guide-small">Published October 27, 2026 · Updated October 28, 2026 · Pulse</p>
         <a class="guide-cta" href="/#rate-limit-analyzer">Open the rate-limit analyzer →</a>
         <p class="guide-small">Only test endpoints you own or are authorized to test. Free runs are capped at 1,000 requests and 10 concurrent workers.</p>
       </section>

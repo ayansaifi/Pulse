@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Learn how to load test an API from a browser, read response-time and throughput results, and plan a controlled test with Pulse's free API load tester.">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="canonical" href="https://apulse.tech/api-load-testing.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Pulse">
+  <meta property="og:title" content="How to Load Test an API from Your Browser | Pulse">
+  <meta property="og:description" content="A practical guide to API load testing, response-time measurements, throughput, CORS, and controlled browser tests.">
+  <meta property="og:url" content="https://apulse.tech/api-load-testing.html">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="How to Load Test an API from Your Browser | Pulse">
+  <meta name="twitter:description" content="A practical guide to API load testing, response-time measurements, throughput, CORS, and controlled browser tests.">
+  <title>How to Load Test an API from Your Browser | Pulse</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "How to Load Test an API from Your Browser",
+    "description": "A practical guide to API load testing, response-time measurements, throughput, CORS, and controlled browser tests.",
+    "mainEntityOfPage": "https://apulse.tech/api-load-testing.html",
+    "datePublished": "2026-10-28",
+    "dateModified": "2026-10-28",
+    "publisher": { "@type": "Organization", "name": "Pulse", "url": "https://apulse.tech/" }
+  }
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <script src="guide-theme.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#guide-main">Skip to guide</a>
+  <div class="guide-shell">
+    <header class="guide-header">
+      <a class="guide-brand" href="/" aria-label="Pulse home">pulse<span>.</span></a>
+      <nav class="guide-header-tools" aria-label="Main navigation">
+        <a class="btn-secondary" href="rate-limit-tester.html">Rate-limit guide</a>
+        <a class="btn-secondary" href="/#test-configuration">Open the free tester →</a>
+        <button id="guide-theme-toggle" class="btn-secondary" type="button">Dark mode</button>
+      </nav>
+    </header>
+    <main id="guide-main">
+      <section class="guide-hero">
+        <div class="eyebrow">PULSE / API PERFORMANCE</div>
+        <h1>How to load test an API from your browser</h1>
+        <p>A practical starting point for measuring API response time, observed throughput, and HTTP errors with a controlled browser test.</p>
+        <p class="guide-small">Published October 28, 2026 · Updated October 28, 2026 · Pulse</p>
+        <a class="guide-cta" href="/#test-configuration">Open Pulse’s free API load tester →</a>
+        <p class="guide-small">Pulse sends requests directly from your browser to the endpoint you enter. Runs are limited to 1,000 requests and 10 workers. Test only endpoints you own or are authorized to test.</p>
+      </section>
+      <section class="guide-section" aria-labelledby="meaning-title">
+        <h2 id="meaning-title">What API load testing measures</h2>
+        <p>An API load test sends a controlled set of requests to an endpoint to observe how it responds. The useful evidence is more than one “fast” or “slow” number: look at response times across the run, completed requests per second, status codes, and any rate-limit signals the API exposes.</p>
+        <div class="guide-grid">
+          <article><h3>Response time</h3><p>Pulse measures the time until the browser receives response headers. This helps compare requests, but does not measure how long the entire response body takes to download.</p></article>
+          <article><h3>Throughput</h3><p>Requests per second describes how many responses completed over the measured run. Browser throughput depends on your device, connection, request delay, concurrency, and the API being tested.</p></article>
+          <article><h3>Status codes</h3><p>Successful responses, HTTP 429 rate limits, other 4xx and 5xx responses, and network failures suggest different next steps. A browser cannot always distinguish CORS errors from connectivity or server failures.</p></article>
+          <article><h3>Rate-limit headers</h3><p>Some APIs expose a limit, remaining quota, reset time, or <code>Retry-After</code>. Header names and behavior differ by provider. A browser can read cross-origin headers only when the API allows them through CORS.</p></article>
+        </div>
+      </section>
+      <section class="guide-section" aria-labelledby="method-title">
+        <h2 id="method-title">A safer way to run a browser API test</h2>
+        <ol class="guide-steps">
+          <li><strong>Choose a read-only endpoint you control.</strong> A health check or safe GET route avoids creating, changing, or deleting data while testing.</li>
+          <li><strong>Start with a small request count.</strong> Confirm the endpoint, method, authentication settings, and expected behavior before increasing traffic.</li>
+          <li><strong>Keep concurrency low at first.</strong> A worker is one in-flight request. Add a delay when you need a slower, more controlled request rate.</li>
+          <li><strong>Change one setting at a time.</strong> Compare similar runs while changing request count, workers, or delay individually. This makes results easier to interpret.</li>
+          <li><strong>Read the evidence, then stop.</strong> Inspect latency, status codes, and exposed quota headers. Stop if you see unexpected errors or reach your approved testing limit.</li>
+        </ol>
+        <p>One browser run is a snapshot, not a production capacity guarantee. It does not account for other users, server-side work, geographic differences, connection pools, or long-running effects. Use a controlled server-side test and your provider’s policy when you need production capacity numbers.</p>
+      </section>
+      <section class="guide-section" aria-labelledby="cors-title">
+        <h2 id="cors-title">Why CORS affects an API load test</h2>
+        <p>A browser may be allowed to send a cross-origin request while being prevented from reading its response. The API needs to allow the page’s origin with its CORS response headers. To let Pulse read rate-limit headers, the API must list those headers in <code>Access-Control-Expose-Headers</code>. A network error in the browser does not prove the API is down; check the endpoint’s CORS policy, browser console, and server logs.</p>
+      </section>
+      <section class="guide-section" aria-labelledby="faq-title">
+        <h2 id="faq-title">API load testing questions</h2>
+        <div class="seo-faq">
+          <details><summary>Can I load test an API online for free?</summary><p>Yes. Pulse runs a bounded browser test without an account. A free run allows up to 1,000 requests and 10 workers. Your browser sends requests directly to the endpoint, so its CORS policy must permit browser access.</p></details>
+          <details><summary>How do I measure API response time?</summary><p>Send a controlled set of requests and compare their response times. Pulse measures the time until response headers arrive, then summarizes latency across completed requests. This does not include full response-body download time.</p></details>
+          <details><summary>What does HTTP 429 mean in an API test?</summary><p>HTTP 429 means the server is reporting that a request was rate limited. Check the provider’s rate-limit policy and any <code>Retry-After</code> or quota headers. The first 429 in one browser run is not automatically a safe operating threshold.</p></details>
+          <details><summary>Why does my browser API test show a network error?</summary><p>The browser may block access because of CORS, connectivity issues, or a server failure. Browser JavaScript cannot reliably distinguish all of these cases, so check the browser console and the API’s server logs.</p></details>
+          <details><summary>Does a browser load test prove production capacity?</summary><p>No. Browser results depend on your device and network and reflect a single controlled run. Use authorized, repeatable server-side testing and the service owner’s guidelines for capacity planning.</p></details>
+        </div>
+      </section>
+      <section class="guide-end">
+        <h2>Measure a controlled API run</h2>
+        <p>Start small, review the endpoint settings, and inspect each result before increasing the load.</p>
+        <a class="guide-cta" href="/#test-configuration">Open the free API load tester →</a>
+        <p class="guide-small">For rate-limit terminology and HTTP 429 analysis, read the <a href="rate-limit-tester.html">Pulse rate-limit testing guide</a>.</p>
+      </section>
+    </main>
+    <footer class="guide-footer"><a href="/">Workspace</a><a href="rate-limit-tester.html">Rate-limit guide</a><a href="privacy.html">Privacy</a><span>© 2026 Pulse</span></footer>
+  </div>
+</body>
+</html>

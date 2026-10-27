@@ -3,20 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Test API response times, throughput, and rate limits from your browser. Free browser-based API load testing with no account required.">
+  <meta name="description" content="Run a free API load test in your browser. Measure response time, throughput, HTTP errors, and rate-limit behavior with up to 1,000 requests per run.">
   <meta name="theme-color" content="#f1f5f9">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="canonical" href="https://apulse.tech/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Pulse">
-  <meta property="og:title" content="Pulse — Free Browser-Based API Load Tester">
-  <meta property="og:description" content="Test API response times, throughput, and rate limits from your browser. No account required.">
+  <meta property="og:title" content="Free Online API Load Tester | Pulse">
+  <meta property="og:description" content="Measure API response time, throughput, HTTP errors, and rate limits with a browser-based load test.">
   <meta property="og:url" content="https://apulse.tech/">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Pulse — Free Browser-Based API Load Tester">
-  <meta name="twitter:description" content="Test API response times, throughput, and rate limits from your browser. No account required.">
-  <title>Pulse — Free Browser-Based API Load Tester</title>
+  <meta name="twitter:title" content="Free Online API Load Tester | Pulse">
+  <meta name="twitter:description" content="Measure API response time, throughput, HTTP errors, and rate limits with a browser-based load test.">
+  <title>Free Online API Load Tester | Pulse</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "WebSite", "@id": "https://apulse.tech/#website", "name": "Pulse", "url": "https://apulse.tech/" },
+      { "@type": "Organization", "@id": "https://apulse.tech/#organization", "name": "Pulse", "url": "https://apulse.tech/", "logo": "https://apulse.tech/favicon.svg", "email": "saifiayan822@gmail.com" }
+    ]
+  }
+  </script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="workspace.css">
   <!-- Chart.js for real-time performance graphs -->
@@ -41,7 +50,7 @@
           <p>API performance workspace</p>
         </div>
       </div>
-      <nav class="workspace-nav" aria-label="Main navigation"><a href="index.html" aria-current="page">Workspace</a><a href="rate-limit-tester.html">Learn</a></nav>
+      <nav class="workspace-nav" aria-label="Main navigation"><a href="index.html" aria-current="page">Workspace</a><a href="api-load-testing.html">API load testing</a><a href="rate-limit-tester.html">Rate limits</a></nav>
       <div class="header-tools">
         <span class="free-badge">Free workspace</span>
         <button id="theme-toggle" class="btn-secondary" title="Toggle Dark/Light theme">
@@ -55,8 +64,8 @@
     <section class="workspace-heading">
       <div class="workspace-copy">
         <div class="eyebrow">YOUR PERFORMANCE LAB</div>
-        <h1>Every request.<br><span>A clearer picture.</span></h1>
-        <p>Understand how your API behaves under pressure.<br> Configure a run. Watch it live. Share what you learn.</p>
+        <h1>Free API load testing<br><span>from your browser.</span></h1>
+        <p>Measure response time, throughput, HTTP errors, and rate limits as they happen. Configure a test, inspect the results, and share a clean report.</p>
       </div>
       <div class="workspace-proof">
         <div class="proof-wave" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
@@ -422,9 +431,30 @@
         <p>Saved history · scheduled checks · alerts · shared team workspaces.</p>
       </article>
     </section></details>
+    <section class="seo-hub" aria-labelledby="seo-heading">
+      <div class="eyebrow">API TESTING, MADE CLEAR</div>
+      <h2 id="seo-heading">A free API load tester for your next performance check.</h2>
+      <p>Pulse is a browser-based API testing tool for checking response time, observed throughput, HTTP status codes, and visible rate-limit behavior. Configure a bounded test, send requests directly to an endpoint you control, and inspect the results in one workspace.</p>
+      <div class="seo-hub-grid">
+        <article><h3>Check response time and throughput</h3><p>See how long it takes for response headers to arrive and how many requests finish over the run. Your browser, internet connection, and endpoint all affect the measurements.</p></article>
+        <article><h3>Understand HTTP errors and rate limits</h3><p>Review successful responses, HTTP 429, other HTTP errors, network failures, and quota headers exposed to the browser.</p></article>
+        <article><h3>Run a controlled test without an account</h3><p>Choose a read-only endpoint, set the request count and workers, and start with a small run. Pulse’s free browser runs support up to 1,000 requests.</p></article>
+      </div>
+      <nav class="seo-guide-links" aria-label="API testing guides">
+        <a href="api-load-testing.html">Read: how to load test an API from your browser →</a>
+        <a href="rate-limit-tester.html">Read: test API rate limits and understand HTTP 429 →</a>
+      </nav>
+      <h3 class="seo-faq-title">Frequently asked questions</h3>
+      <div class="seo-faq">
+        <details><summary>What is an API load tester?</summary><p>An API load tester sends controlled requests to an endpoint and records how it responds. Pulse shows response-header latency, observed throughput, HTTP status counts, and rate-limit information an API exposes.</p></details>
+        <details><summary>Can Pulse test any API endpoint?</summary><p>Your browser must be allowed to reach the endpoint. For a cross-origin API, its CORS policy needs to allow browser requests from the Pulse website. Use only endpoints you own or have permission to test.</p></details>
+        <details><summary>Will this test show my API’s maximum safe traffic?</summary><p>No. A browser run shows observations from one device and one period. It does not establish a guaranteed safe rate or production capacity.</p></details>
+      </div>
+    </section>
     <footer class="site-footer">
-      <nav class="site-footer-links" aria-label="Legal and contact">
-        <a href="rate-limit-tester.html">Rate-limit tester</a>
+      <nav class="site-footer-links" aria-label="Product guides and contact">
+        <a href="api-load-testing.html">API load testing guide</a>
+        <a href="rate-limit-tester.html">Rate-limit guide</a>
         <a href="privacy.html">Privacy</a>
         <a href="mailto:saifiayan822@gmail.com">Contact</a>
       </nav>

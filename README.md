@@ -30,6 +30,10 @@ The static `404.html` supplies a real not-found page on hosts that support it. T
 
 ## How it works
 
+The homepage, API load-testing guide, and rate-limit guide are public search landing pages with canonical URLs. sitemap.xml lists the site's public HTML pages and robots.txt points crawlers to it. The homepage includes visible product details and truthful WebSite and Organization structured data; guides use article metadata. No fabricated reviews or ratings are added.
+
+Organic and AI-assisted search visibility still depends on discovery, indexing, third-party references, and each search provider's systems. After publishing, verify the domain in Google Search Console and Bing Webmaster Tools, submit /sitemap.xml, and request indexing for the public landing pages.
+
 Configure an endpoint, request count, concurrency, delay, headers and optional body, then start a run. A request times out after 30 seconds. Stop cancels in-flight requests and waits for workers to finish. The 429 option halts further dispatches and cancels outstanding requests. Current and peak throughput count completions in a rolling one-second window; average throughput uses the run duration. Latency measures time to response headers, not full-body download time.
 
 Only test endpoints you are authorized to test. Browser connection limits, CORS, preflight requests, network conditions and the user's device affect results. Pulse does not route requests through a proxy. If the target blocks browser requests through CORS, configure CORS on that target or use a future Pro cloud-run test. Browsers can only expose rate-limit headers permitted by the target's CORS policy. Missing headers do not mean a limit does not exist. Results should not be used as a substitute for a controlled, server-side load test.

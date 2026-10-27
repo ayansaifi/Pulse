@@ -42,6 +42,30 @@ async function main() {
     const noOverflow = async () => assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Page overflows the viewport');
     await page.goto(origin);
     await noOverflow();
+    assert.match(await page.title(), /Free Online API Load Tester/);
+    assert.equal(await page.locator('h1').count(), 1);
+    assert.match(await page.locator('h1').textContent(), /Free API load testing\s*from your browser/);
+    const description = await page.locator('meta[name="description"]').getAttribute('content');
+    assert.match(description, /API load test/);
+    const siteData = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
+    assert(siteData['@graph'].some(item => item['@type'] === 'WebSite' && item.name === 'Pulse'));
+    assert(siteData['@graph'].some(item => item['@type'] === 'Organization' && item.url === 'https://apulse.tech/'));
+    const sitemap = await (await page.request.get(origin + '/sitemap.xml')).text();
+    for (const url of ['/', '/privacy.html', '/rate-limit-tester.html', '/api-load-testing.html']) assert(sitemap.includes('https://apulse.tech' + url));
+    assert(!sitemap.includes('report.html'));
+    await page.goto(origin + '/api-load-testing.html');
+    assert.match(await page.title(), /How to Load Test an API/);
+    assert.match(await page.locator('h1').textContent(), /load test an API from your browser/i);
+    assert.equal(await page.locator('meta[name="robots"]').count(), 0);
+    const articleData = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
+    assert.equal(articleData['@type'], 'Article');
+    await capture('pulse-seo-guide');
+    await noOverflow();
+    await page.goto(origin + '/rate-limit-tester.html');
+    assert.match(await page.title(), /Rate-Limit Tester/);
+    assert.equal(await page.locator('meta[property="og:url"]').getAttribute('content'), 'https://apulse.tech/rate-limit-tester.html');
+    await page.goto(origin);
+    await noOverflow();
     await capture('pulse-desktop');
     await page.getByRole('tab', { name: 'Overview', exact: true }).focus();
     await page.keyboard.press('ArrowRight');
@@ -113,7 +137,7 @@ async function main() {
     assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
     await capture('pulse-dark');
     assert.deepEqual(errors, []);
-    console.log('Passed: real-browser run, report copy/open, old links, invalid reports, keyboard tabs, desktop/tablet/mobile layout, dark theme.');
+    console.log('Passed: SEO metadata, structured data, sitemap, public guides, real-browser run, report copy/open, old links, invalid reports, keyboard tabs, desktop/tablet/mobile layout, dark theme.');
   } finally { await browser.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => server.close());
