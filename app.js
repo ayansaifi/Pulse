@@ -27,6 +27,7 @@ const state = {
   rateSamples: [],
   runConfig: null,
   results: [],
+  analyzerReport: null,
   
   // Rate Limit Analytics
   rateLimit: {
@@ -125,6 +126,12 @@ const DOM = {
 
   btnExportCsv: document.getElementById('btn-export-csv'),
   btnExportJson: document.getElementById('btn-export-json'),
+  btnGuidedSetup: document.getElementById('btn-guided-setup'),
+  btnReportDownload: document.getElementById('btn-report-download'),
+  btnReportShare: document.getElementById('btn-report-share'),
+  analyzerSummary: document.getElementById('analyzer-summary'),
+  analyzerBars: document.getElementById('analyzer-bars'),
+  analyzerShareNote: document.getElementById('analyzer-share-note'),
 
   // Detail Modal
   detailModal: document.getElementById('detail-modal'),
@@ -144,6 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof Chart === 'undefined') { DOM.statusBadge.textContent = 'Charts unavailable; reload'; DOM.btnStart.disabled = true; return; }
   initCharts();
   bindEvents();
+  const sharedReport = PulseAnalyzer.readShareHash(location.hash);
+  if (sharedReport) renderAnalyzer(sharedReport, true);
 });
 
 // Theme Management
@@ -433,6 +442,9 @@ function bindEvents() {
   // Export Toolbar
   DOM.btnExportCsv.addEventListener('click', exportCsv);
   DOM.btnExportJson.addEventListener('click', exportJson);
+  DOM.btnGuidedSetup.addEventListener('click', setupRateLimitRun);
+  DOM.btnReportDownload.addEventListener('click', downloadAnalyzerReport);
+  DOM.btnReportShare.addEventListener('click', shareAnalyzerReport);
 
   // Details Modal Events
   DOM.btnCloseModal.addEventListener('click', () => DOM.detailModal.classList.remove('active'));
@@ -450,6 +462,20 @@ function bindEvents() {
 function updateHeaderCount() {
   const count = DOM.headersList.querySelectorAll('.header-item').length;
   DOM.headerCount.textContent = count;
+}
+
+function setupRateLimitRun() {
+  if (state.isRunning) return;
+  DOM.httpMethod.value = 'GET';
+  DOM.httpMethod.setAttribute('data-method', 'GET');
+  setRequestCount(100);
+  DOM.concurrencySlider.value = 1;
+  DOM.concurrencyVal.textContent = '1';
+  DOM.delaySlider.value = 100;
+  DOM.delayVal.textContent = '100ms';
+  DOM.stopOn429.checked = true;
+  DOM.analyzerShareNote.textContent = 'Guided setup selected: 100 GET requests, one worker, 100 ms delay, and automatic stop on HTTP 429. Review the target URL, then start the test.';
+  DOM.targetUrl.focus();
 }
 
 // Preset Targets (all public CORS enabled)
@@ -535,6 +561,7 @@ async function startTest() {
   state.completedCount = 0;
   state.activeWorkers = 0;
   state.results = [];
+  state.analyzerReport = null;
   state.startTime = Date.now();
   state.endTime = null;
   state.controller = new AbortController();
@@ -574,6 +601,7 @@ async function startTest() {
   DOM.rlReset.textContent = '--';
   DOM.rlBreachReq.textContent = '--';
   DOM.rlSustainableRps.textContent = '--';
+  resetAnalyzer();
 
   resetCharts();
   DOM.mSuccessRate.textContent = '—';
@@ -629,8 +657,9 @@ async function runWorker(workerId, url, method, headers, bodyTemplate) {
 
     const result = await executeSingleRequest(reqNum, url, method, headers, processedBody);
     if (!result) break;
-    state.results.push(result);
     const completedAt = Date.now();
+    result.completedAt = completedAt;
+    state.results.push(result);
     state.rateSamples.push(completedAt);
     state.rateSamples = state.rateSamples.filter(t => t > completedAt - 1000);
     state.peakRps = Math.max(state.peakRps, state.rateSamples.length);
@@ -678,7 +707,7 @@ async function executeSingleRequest(id, url, method, headers, body) {
     response.headers.forEach((v, k) => {
       const lower = k.toLowerCase();
       resHeaders[lower] = v;
-      if (lower.includes('ratelimit') || lower === 'retry-after') {
+      if (lower.includes('ratelimit') || lower.includes('rate-limit') || lower === 'retry-after') {
         rateLimitHeaders[lower] = v;
       }
     });
@@ -731,10 +760,14 @@ async function executeSingleRequest(id, url, method, headers, body) {
 // Rate Limit Inspector
 function inspectRateLimit(result) {
   const rl = result.rateLimitHeaders || {};
-  
-  const limitVal = rl['x-ratelimit-limit'] || rl['ratelimit-limit'] || rl['x-rate-limit-limit'];
-  const remainingVal = rl['x-ratelimit-remaining'] || rl['ratelimit-remaining'] || rl['x-rate-limit-remaining'];
-  const resetVal = rl['x-ratelimit-reset'] || rl['ratelimit-reset'] || rl['x-rate-limit-reset'];
+  const combined = rl.ratelimit || '';
+  const combinedField = name => {
+    const match = combined.match(new RegExp('(?:^|[,;\\s])' + name + '\\s*=\\s*"?(\\d+)', 'i'));
+    return match ? match[1] : undefined;
+  };
+  const limitVal = rl['ratelimit-limit'] ?? rl['x-ratelimit-limit'] ?? rl['x-rate-limit-limit'] ?? combinedField('limit');
+  const remainingVal = rl['ratelimit-remaining'] ?? rl['x-ratelimit-remaining'] ?? rl['x-rate-limit-remaining'] ?? combinedField('remaining');
+  const resetVal = rl['ratelimit-reset'] ?? rl['x-ratelimit-reset'] ?? rl['x-rate-limit-reset'] ?? combinedField('reset');
   const retryAfter = rl['retry-after'];
 
   if (limitVal !== undefined || remainingVal !== undefined || resetVal !== undefined || retryAfter !== undefined) {
@@ -742,15 +775,21 @@ function inspectRateLimit(result) {
     latencyChart.options.scales.y1.display = true;
 
     if (limitVal !== undefined) {
-      state.rateLimit.limit = parseInt(limitVal, 10);
-      DOM.rlLimit.textContent = state.rateLimit.limit.toLocaleString();
+      const limit = parseInt(limitVal, 10);
+      if (Number.isFinite(limit)) {
+        state.rateLimit.limit = limit;
+        DOM.rlLimit.textContent = limit.toLocaleString();
+      }
     }
 
     if (remainingVal !== undefined) {
-      state.rateLimit.remaining = parseInt(remainingVal, 10);
-      DOM.rlRemaining.textContent = state.rateLimit.remaining.toLocaleString();
+      const remaining = parseInt(remainingVal, 10);
+      if (Number.isFinite(remaining)) {
+        state.rateLimit.remaining = remaining;
+        DOM.rlRemaining.textContent = remaining.toLocaleString();
+      }
       
-      if (state.rateLimit.limit) {
+      if (state.rateLimit.limit && state.rateLimit.remaining !== null) {
         const ratio = state.rateLimit.remaining / state.rateLimit.limit;
         if (ratio <= 0.1) DOM.rlRemaining.style.color = 'var(--danger)';
         else if (ratio <= 0.35) DOM.rlRemaining.style.color = 'var(--warning)';
@@ -759,23 +798,20 @@ function inspectRateLimit(result) {
     }
 
     if (resetVal !== undefined || retryAfter !== undefined) {
-      let secondsLeft = 0;
-      if (retryAfter !== undefined) {
-        secondsLeft = parseInt(retryAfter, 10) || 0;
-      } else if (resetVal !== undefined) {
-        const resetNum = parseInt(resetVal, 10);
-        secondsLeft = resetNum > 1000000000 ? Math.max(0, Math.ceil(resetNum - (Date.now() / 1000))) : resetNum;
+      const secondsLeft = retryAfter !== undefined
+        ? PulseAnalyzer.parseRetryAfter(retryAfter)
+        : PulseAnalyzer.parseReset(resetVal);
+      if (secondsLeft !== null) {
+        state.rateLimit.resetCountdown = secondsLeft;
+        DOM.rlReset.textContent = `${secondsLeft}s`;
+        if (secondsLeft > 0) startResetCountdown(secondsLeft);
       }
-
-      state.rateLimit.resetCountdown = secondsLeft;
-      DOM.rlReset.textContent = `${secondsLeft}s`;
-      startResetCountdown(secondsLeft);
-
-
     }
 
-    DOM.rateLimitBadge.textContent = 'Rate Limit Headers Detected';
-    DOM.rateLimitBadge.className = 'status-tag status-2xx';
+    if (state.rateLimit.firstBreachIndex === null) {
+      DOM.rateLimitBadge.textContent = 'Rate Limit Headers Detected';
+      DOM.rateLimitBadge.className = 'status-tag status-2xx';
+    }
   }
 
   // Detect Limit Breach
@@ -790,7 +826,7 @@ function inspectRateLimit(result) {
 
     DOM.rateLimitBanner.style.display = 'flex';
     DOM.rateLimitBanner.className = 'breach-alert danger';
-    DOM.rateLimitMsg.innerHTML = `<strong>Rate Limit Hit!</strong> Breached at Request <strong>#${result.id}</strong> (${state.rateLimit.firstBreachTime}). Quota depleted.`;
+    DOM.rateLimitMsg.innerHTML = `<strong>Rate Limit Hit!</strong> First observed at Request <strong>#${result.id}</strong> (${state.rateLimit.firstBreachTime}).`;
   }
 }
 
@@ -802,8 +838,8 @@ function startResetCountdown(initialSeconds) {
     remaining--;
     if (remaining <= 0) {
       clearInterval(state.resetTimerInterval);
-      DOM.rlReset.textContent = '0s (Reset)';
-      DOM.rateLimitBadge.textContent = 'Reset time elapsed';
+      DOM.rlReset.textContent = '0s (estimate)';
+      if (state.rateLimit.firstBreachIndex === null) DOM.rateLimitBadge.textContent = 'Header wait elapsed';
     } else {
       DOM.rlReset.textContent = `${remaining}s`;
     }
@@ -817,7 +853,7 @@ function triggerRateLimitStop(reqNum) {
   DOM.statusBadge.style.color = 'var(--warning)';
   DOM.rateLimitBanner.style.display = 'flex';
   DOM.rateLimitBanner.className = 'breach-alert warning';
-  DOM.rateLimitMsg.innerHTML = `🛡️ <strong>Safety Auto-Halt:</strong> Dispatches paused upon hitting HTTP 429 at Request <strong>#${reqNum}</strong>.`;
+  DOM.rateLimitMsg.innerHTML = `🛡️ <strong>Safety Auto-Halt:</strong> Dispatches stopped upon hitting HTTP 429 at Request <strong>#${reqNum}</strong>.`;
 }
 
 // Elapsed Time, ETA, and Instantaneous RPS
@@ -929,10 +965,11 @@ function addChartDataPoint(result) {
   latencyChart.data.datasets[0].data.push(result.duration);
   latencyChart.data.datasets[0].pointBackgroundColor.push(pointColor);
 
-  const rem = result.rateLimitHeaders && result.rateLimitHeaders['x-ratelimit-remaining'];
-  if (rem !== undefined) {
-    latencyChart.data.datasets[1].data.push(parseInt(rem, 10));
-  }
+  const rl = result.rateLimitHeaders || {};
+  const combinedMatch = (rl.ratelimit || '').match(/(?:^|[,;\s])remaining\s*=\s*"?(\d+)/i);
+  const rem = rl['ratelimit-remaining'] ?? rl['x-ratelimit-remaining'] ?? rl['x-rate-limit-remaining'] ?? (combinedMatch ? combinedMatch[1] : null);
+  const remaining = rem !== null ? parseInt(rem, 10) : NaN;
+  latencyChart.data.datasets[1].data.push(Number.isFinite(remaining) ? remaining : null);
 
   if (!chartUpdatePending) {
     chartUpdatePending = true;
@@ -995,11 +1032,21 @@ function finishTest() {
   DOM.statInstantRps.textContent = '0.0 RPS';
   latencyChart.update();
   renderLogsTable();
+  if (state.results.length) {
+    state.analyzerReport = PulseAnalyzer.summarize(state.results, {
+      startTime: state.startTime,
+      durationMs: state.endTime - state.startTime,
+      concurrency: state.concurrency,
+      delayMs: state.delayMs
+    });
+    renderAnalyzer(state.analyzerReport);
+  }
 }
 
 function clearAll() {
   if (state.isRunning) return;
   state.results = [];
+  state.analyzerReport = null;
   state.requestIndex = 0;
   state.completedCount = 0;
   state.peakRps = 0;
@@ -1040,6 +1087,7 @@ function clearAll() {
 
   resetCharts();
   renderLogsTable();
+  resetAnalyzer();
 }
 
 // Request Stream Table
@@ -1059,7 +1107,7 @@ function renderLogsTable() {
   if (filtered.length === 0) {
     DOM.logsTbody.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+        <td colspan="7" class="log-empty-cell">
           ${state.results.length === 0 ? 'No requests sent yet.' : 'No requests matching current filter.'}
         </td>
       </tr>
@@ -1088,15 +1136,15 @@ function renderLogsTable() {
     html += `
       <tr>
         <td>#${item.id}</td>
-        <td><strong style="color: var(--text-primary);">${item.method}</strong></td>
+        <td><strong class="log-method">${item.method}</strong></td>
         <td><span class="status-tag ${badgeClass}">${item.status || 'ERR'} ${escapeHtml(item.statusText || '')}</span></td>
         <td class="${latencyClass}"><strong>${item.duration}ms</strong></td>
         <td>${remainingQuota}</td>
-        <td style="color: var(--text-muted); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        <td class="log-preview">
           ${preview}
         </td>
         <td>
-          <button class="btn-secondary" style="padding: 0.15rem 0.45rem; font-size: 0.7rem;" data-request-id="${item.id}">Inspect</button>
+          <button class="btn-secondary log-inspect-button" data-request-id="${item.id}">Inspect</button>
         </td>
       </tr>
     `;
@@ -1140,6 +1188,75 @@ function viewDetails(reqId) {
 }
 
 // Helpers
+function resetAnalyzer() {
+  DOM.analyzerSummary.textContent = 'Run a test to see the analysis.';
+  DOM.analyzerBars.innerHTML = '';
+  DOM.analyzerShareNote.textContent = 'Reports and share links contain aggregate numbers only. Endpoint URLs, headers, and response bodies are excluded.';
+  DOM.btnReportDownload.disabled = true;
+  DOM.btnReportShare.disabled = true;
+}
+
+function renderAnalyzer(report, shared = false) {
+  if (!PulseAnalyzer.isValidReport(report)) return;
+  state.analyzerReport = report;
+  const findings = [];
+  if (report.first429 !== null) {
+    findings.push(`HTTP 429 first appeared at request #${report.first429}. ${report.counts.limited} of ${report.completed} completed requests returned 429.`);
+    if (report.observedBefore429Rps !== null) findings.push(`Before the first observed 429, ${report.observedBefore429Rps} successful responses per second were completed on average. This is not a guaranteed safe rate.`);
+  } else {
+    findings.push(`No HTTP 429 was observed in ${report.completed} completed requests. This does not establish the API's limit or a safe request rate.`);
+  }
+  if (report.limit !== null) findings.push(`Exposed limit header: ${report.limit}.`);
+  if (report.remaining !== null) findings.push(`Last exposed remaining quota: ${report.remaining}.`);
+  if (report.retryAfterSeconds !== null) findings.push(`Retry-After indicated ${report.retryAfterSeconds} seconds when observed.`);
+  else if (report.resetSeconds !== null) findings.push(`An exposed reset header indicated about ${report.resetSeconds} seconds when observed.`);
+  if (report.limit === null && report.remaining === null && report.retryAfterSeconds === null && report.resetSeconds === null) findings.push('No readable rate-limit headers were exposed to this browser.');
+  if (report.counts.network > 0) findings.push(`${report.counts.network} request(s) failed at the network layer; CORS, connectivity, and server failures cannot be distinguished here.`);
+  findings.push(`Average response-header latency: ${report.averageLatencyMs} ms. Test duration: ${report.durationSeconds} s.`);
+  DOM.analyzerSummary.textContent = findings.join('\n');
+
+  const bars = [
+    ['Success', report.counts.success, 'success'],
+    ['429', report.counts.limited, 'limited'],
+    ['Other HTTP', report.counts.otherHttp, 'other'],
+    ['Network', report.counts.network, 'network']
+  ];
+  DOM.analyzerBars.innerHTML = bars.map(([label, count, css]) =>
+    `<div class="analyzer-bar-row"><span>${label}</span><div class="analyzer-bar-track"><span class="analyzer-bar-fill ${css}"></span></div><strong>${count}</strong></div>`
+  ).join('');
+  DOM.analyzerBars.querySelectorAll('.analyzer-bar-fill').forEach((bar, index) => {
+    bar.style.width = `${(bars[index][1] / report.completed) * 100}%`;
+  });
+  DOM.btnReportDownload.disabled = false;
+  DOM.btnReportShare.disabled = false;
+  DOM.analyzerShareNote.textContent = shared
+    ? 'Shared aggregate report. Its values are supplied by the link and are not independently verified. No endpoint URL, credentials, headers, or response bodies were included. Run your own test below.'
+    : 'Report ready. Download or share aggregate numbers without endpoint URLs, credentials, headers, or response bodies.';
+}
+
+function downloadAnalyzerReport() {
+  const report = state.analyzerReport;
+  if (!PulseAnalyzer.isValidReport(report)) return;
+  const link = document.createElement('a');
+  link.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(report, null, 2));
+  link.download = `pulse_rate_limit_report_${Date.now()}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+async function shareAnalyzerReport() {
+  const report = state.analyzerReport;
+  if (!PulseAnalyzer.isValidReport(report)) return;
+  const url = location.origin + location.pathname + PulseAnalyzer.shareHash(report);
+  try {
+    await navigator.clipboard.writeText(url);
+    DOM.analyzerShareNote.textContent = 'Safe report link copied. Only aggregate numbers are in the link.';
+  } catch {
+    DOM.analyzerShareNote.textContent = 'Could not copy automatically. Use the download button to share the aggregate report.';
+  }
+}
+
 function getHeadersFromUI() {
   const headers = {};
   DOM.headersList.querySelectorAll('.header-item').forEach(row => {

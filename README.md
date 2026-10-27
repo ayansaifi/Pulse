@@ -12,9 +12,17 @@ A browser-based tool for exploring API response times, status codes, and exposed
 
 Pro is coming soon with saved history, scheduled checks, alerts, team workspaces, and controlled cloud runs.
 
+## Rate-limit analyzer
+
+The guided setup selects 100 GET requests, one worker, a 100 ms delay, and stop on the first observed HTTP 429. After any run, the analyzer summarizes 429 responses, exposed rate-limit and Retry-After headers, network failures, and observed throughput before the first 429. A single browser run does not establish a guaranteed safe rate. The public guide is at `rate-limit-tester.html`.
+
+The analyzer's separate JSON report and share link include aggregate numbers only; they exclude endpoint URLs, request and response headers, credentials, and response bodies. Share links encode that report in the URL fragment and do not require a server. The original CSV and JSON exports remain detailed and can contain sensitive endpoint data.
+
 ## Run locally or on Cloudflare Pages
 
 Serve this directory over HTTP or HTTPS and open `index.html`. All application assets are self-hosted. Cloudflare Pages applies the headers in `_headers`.
+
+The static `404.html` supplies a real not-found page on hosts that support it. The Cloudflare Pages `_headers` rule applies the existing security policy across the site; static styles live in `style.css` so the policy can keep inline styles blocked. Configure a separate `www.apulse.tech` DNS record and redirect to the apex domain in Cloudflare if `www` should work.
 
 ## How it works
 
@@ -30,4 +38,4 @@ Rate-limit reset values are interpreted heuristically and may vary by API.
 
 ## Verify
 
-Run `node tests/run.js` for focused checks of Free-plan limits and cancellation. This does not replace browser compatibility, accessibility, security, or real-network testing.
+Run `node tests/run.js` and `node tests/analyzer.js` for focused checks of Free-plan limits, cancellation, analyzer behavior, and aggregate report privacy. This does not replace browser compatibility, accessibility, security, or real-network testing.

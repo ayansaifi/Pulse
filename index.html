@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Test API response times, throughput, and rate limits from your browser. Free browser-based API load testing with no account required.">
   <meta name="theme-color" content="#f1f5f9">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="canonical" href="https://apulse.tech/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Pulse">
@@ -39,6 +41,7 @@
         </div>
       </div>
       <div class="header-tools">
+        <a class="btn-secondary" href="rate-limit-tester.html">Rate-limit guide</a>
         <button id="theme-toggle" class="btn-secondary" title="Toggle Dark/Light theme">
           Theme
         </button>
@@ -52,6 +55,7 @@
         <div class="eyebrow">API OBSERVABILITY <span>/</span> LOAD TEST</div>
         <h1>Test API performance<br>from your browser.</h1>
         <p>Load test an endpoint and inspect response time, throughput, and rate limits—without sending test traffic through Pulse.</p>
+        <a class="workspace-guide-link" href="rate-limit-tester.html">New: guided API rate-limit analysis →</a>
       </div>
       <div class="workspace-proof"><div class="proof-mark"><span></span><span></span><span></span><span></span><span></span></div><div><strong>Runs from your browser</strong><small>No account. No test traffic routed through Pulse.</small></div></div>
     </section>
@@ -94,7 +98,7 @@
           <div class="form-field">
             <label class="field-label">
               <span>Target Endpoint</span>
-              <span id="url-status-hint" style="font-size: 0.725rem; color: var(--text-muted);">HTTPS Recommended</span>
+              <span id="url-status-hint" class="csp-style-01">HTTPS Recommended</span>
             </label>
             <div class="input-split">
               <select id="http-method" class="ui-select method-select" data-method="GET">
@@ -135,7 +139,7 @@
             <div class="slider-wrap">
               <input type="range" id="concurrency-slider" min="1" max="10" value="5">
             </div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">
+            <div class="csp-style-02">
               Simultaneous in-flight requests running in parallel
             </div>
           </div>
@@ -156,7 +160,7 @@
             <label class="custom-switch">
               <input type="checkbox" id="stop-on-429" checked>
               <span class="switch-track"></span>
-              <span style="font-size: 0.785rem; font-weight: 600; color: var(--text-secondary);">
+              <span class="csp-style-03">
                 Stop automatically on HTTP 429
               </span>
             </label>
@@ -178,17 +182,17 @@
                 <button type="button" class="btn-icon-danger">&times;</button>
               </div>
             </div>
-            <button type="button" id="btn-add-header" class="btn-secondary" style="width: 100%; margin-top: 0.45rem; justify-content: center;">+ Add Header</button>
+            <button type="button" id="btn-add-header" class="btn-secondary csp-style-04">+ Add Header</button>
           </div>
 
           <!-- Body View -->
           <div id="tab-body" class="subtab-view">
-            <textarea id="request-body" class="ui-textarea" rows="5" placeholder='{"userId": 1, "testId": "{{id}}", "timestamp": "{{timestamp}}"}' style="font-family: var(--font-mono); font-size: 0.8rem;"></textarea>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.35rem;">
-              <span style="font-size: 0.72rem; color: var(--text-muted);">
+            <textarea id="request-body" class="ui-textarea csp-style-05" rows="5" placeholder='{"userId": 1, "testId": "{{id}}", "timestamp": "{{timestamp}}"}'></textarea>
+            <div class="csp-style-06">
+              <span class="csp-style-07">
                 Tags: <code>{{id}}</code>, <code>{{timestamp}}</code>, <code>{{random}}</code>, <code>{{uuid}}</code>
               </span>
-              <button id="btn-beautify-json" class="btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">Format JSON</button>
+              <button id="btn-beautify-json" class="btn-secondary csp-style-08">Format JSON</button>
             </div>
           </div>
 
@@ -198,7 +202,7 @@
               <label class="field-label">Authorization token (Bearer)</label>
               <input type="password" id="auth-bearer-token" class="ui-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
             </div>
-            <button id="btn-apply-auth" class="btn-secondary" style="width: 100%; justify-content: center;">Apply to Headers</button>
+            <button id="btn-apply-auth" class="btn-secondary csp-style-09">Apply to Headers</button>
           </div>
 
           <!-- Primary Execution Controls -->
@@ -208,8 +212,8 @@
             <button id="btn-stop" class="btn-cta btn-stop" disabled>Stop</button>
           </div>
 
-          <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
-            <button id="btn-clear" class="btn-secondary" style="flex: 1; justify-content: center;">Clear results</button>
+          <div class="csp-style-10">
+            <button id="btn-clear" class="btn-secondary csp-style-11">Clear results</button>
           </div>
         </div>
       </aside>
@@ -220,9 +224,9 @@
         <div class="panel-card progress-banner">
           <div class="progress-header-info">
             <div>
-              <strong>Run status</strong> <span class="status-separator">/</span> <span id="status-badge" style="color: var(--text-muted); font-weight: 700;">Idle</span>
+              <strong>Run status</strong> <span class="status-separator">/</span> <span id="status-badge" class="csp-style-12">Idle</span>
             </div>
-            <div id="progress-percent" style="font-family: var(--font-mono); font-weight: 800; font-size: 1.1rem;">0%</div>
+            <div id="progress-percent" class="csp-style-13">0%</div>
           </div>
           <div class="progress-rail">
             <div id="progress-fill" class="progress-bar-fill"></div>
@@ -232,17 +236,17 @@
             <div class="meta-item">Active workers: <strong id="stat-active-workers">0</strong></div>
             <div class="meta-item">Duration: <strong id="stat-elapsed">0.0s</strong></div>
             <div class="meta-item">ETA: <strong id="stat-eta">--</strong></div>
-            <div class="meta-item">Current rate: <strong id="stat-instant-rps" style="color: var(--info);">0.0 RPS</strong></div>
+            <div class="meta-item">Current rate: <strong id="stat-instant-rps" class="csp-style-14">0.0 RPS</strong></div>
           </div>
         </div>
 
         <!-- Hero Rate Limit & Quota Reach Inspector -->
         <div class="panel-card shield-panel" id="rate-limit-panel">
-          <div class="panel-title" style="margin-bottom: 0;">
+          <div class="panel-title csp-style-15">
             <span class="panel-title-text">
               <span>Rate limits</span>
             </span>
-            <span id="rate-limit-badge" class="status-tag" style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); color: var(--text-muted);">
+            <span id="rate-limit-badge" class="status-tag csp-style-16">
               Waiting for data
             </span>
           </div>
@@ -261,42 +265,59 @@
               <div class="quota-stat-title">Reset In</div>
             </div>
             <div class="quota-stat-box">
-              <div id="rl-breach-req" class="quota-stat-value" style="color: var(--danger);">--</div>
+              <div id="rl-breach-req" class="quota-stat-value csp-style-17">--</div>
               <div class="quota-stat-title">First breach</div>
             </div>
             <div class="quota-stat-box">
-              <div id="rl-sustainable-rps" class="quota-stat-value" style="color: var(--success);">--</div>
+              <div id="rl-sustainable-rps" class="quota-stat-value csp-style-18">--</div>
               <div class="quota-stat-title">Sustainable RPS (unknown)</div>
             </div>
           </div>
 
           <!-- Dynamic Breach Alert Banner -->
-          <div id="rate-limit-banner" class="breach-alert warning" style="display: none;">
-            <span style="font-size: 1.1rem;">⚠️</span>
+          <div id="rate-limit-banner" class="breach-alert warning csp-style-19">
+            <span class="csp-style-20">⚠️</span>
             <div id="rate-limit-msg">Rate limit headers will be inspected live upon first request.</div>
           </div>
         </div>
+
+        <section class="panel-card analyzer-panel" id="rate-limit-analyzer" aria-labelledby="analyzer-heading">
+          <div class="panel-title analyzer-title">
+            <h2 id="analyzer-heading">Rate-limit analyzer</h2>
+            <span class="status-tag">Browser run</span>
+          </div>
+          <p class="analyzer-intro">See when HTTP 429 appears and what rate-limit headers the API exposes. One run cannot establish a guaranteed safe rate.</p>
+          <div class="analyzer-actions">
+            <button id="btn-guided-setup" class="btn-secondary" type="button">Use guided setup</button>
+            <button id="btn-report-download" class="btn-secondary" type="button" disabled>Download safe report</button>
+            <button id="btn-report-share" class="btn-secondary" type="button" disabled>Copy share link</button>
+          </div>
+          <p id="analyzer-share-note" class="analyzer-note" role="status">Reports and share links contain aggregate numbers only. Endpoint URLs, headers, and response bodies are excluded.</p>
+          <div id="analyzer-summary" class="analyzer-summary" aria-live="polite">Run a test to see the analysis.</div>
+          <div id="analyzer-bars" class="analyzer-bars" aria-label="Response breakdown"></div>
+          <p class="analyzer-note">Browser restrictions can hide response headers. A network failure may be caused by CORS, connectivity, or the target server.</p>
+        </section>
 
         <!-- SaaS Performance KPI Grid -->
         <div class="kpi-grid">
           <div class="kpi-card green">
             <div class="kpi-caption">Success Rate</div>
-            <div id="m-success-rate" class="kpi-number" style="color: var(--success);">—</div>
+            <div id="m-success-rate" class="kpi-number csp-style-18">—</div>
             <div class="kpi-footnote"><span id="m-2xx">0</span> HTTP 2xx</div>
           </div>
           <div class="kpi-card amber">
             <div class="kpi-caption">Rate Limited (429)</div>
-            <div id="m-429" class="kpi-number" style="color: var(--warning);">0</div>
+            <div id="m-429" class="kpi-number csp-style-21">0</div>
             <div class="kpi-footnote" id="m-429-pct">0% of total</div>
           </div>
           <div class="kpi-card red">
             <div class="kpi-caption">Errors (4xx / 5xx)</div>
-            <div id="m-errors" class="kpi-number" style="color: var(--danger);">0</div>
+            <div id="m-errors" class="kpi-number csp-style-17">0</div>
             <div class="kpi-footnote"><span id="m-4xx">0</span> client &bull; <span id="m-5xx">0</span> server</div>
           </div>
           <div class="kpi-card blue">
             <div class="kpi-caption">Throughput (Avg / Peak)</div>
-            <div id="m-rps" class="kpi-number" style="color: var(--info);">0.0</div>
+            <div id="m-rps" class="kpi-number csp-style-14">0.0</div>
             <div class="kpi-footnote">Peak: <span id="m-peak-rps">0.0</span> RPS</div>
           </div>
           <div class="kpi-card purple">
@@ -306,7 +327,7 @@
           </div>
           <div class="kpi-card purple">
             <div class="kpi-caption">Percentiles (p50 / p95 / p99)</div>
-            <div id="m-latency-p95" class="kpi-number" style="font-size: 1.1rem;">-- / -- / --</div>
+            <div id="m-latency-p95" class="kpi-number csp-style-20">-- / -- / --</div>
             <div class="kpi-footnote">Tail response distribution</div>
           </div>
         </div>
@@ -334,7 +355,7 @@
         <!-- Request Stream & Table -->
         <div class="panel-card">
           <div class="table-toolbar">
-            <h3 class="panel-title" style="margin-bottom: 0;">
+            <h3 class="panel-title csp-style-15">
               <span class="panel-title-text"><span class="section-index">04</span>Request log <span class="log-count-badge" id="log-count">0</span></span>
             </h3>
             <div class="filter-group">
@@ -345,7 +366,7 @@
               <button class="filter-chip" data-filter="5xx">5xx Server</button>
               <button class="filter-chip" data-filter="failed">Network Err</button>
             </div>
-            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            <div class="csp-style-22">
 <button id="btn-export-csv" class="btn-secondary">CSV</button>
               <button id="btn-export-json" class="btn-secondary">JSON</button>
             </div>
@@ -355,18 +376,18 @@
             <table class="stream-table">
               <thead>
                 <tr>
-                  <th style="width: 55px;">#</th>
-                  <th style="width: 80px;">Method</th>
-                  <th style="width: 110px;">Status</th>
-                  <th style="width: 95px;">Latency</th>
-                  <th style="width: 130px;">Quota Remaining</th>
+                  <th class="csp-style-23">#</th>
+                  <th class="csp-style-24">Method</th>
+                  <th class="csp-style-25">Status</th>
+                  <th class="csp-style-26">Latency</th>
+                  <th class="csp-style-27">Quota Remaining</th>
                   <th>Response Preview</th>
-                  <th style="width: 70px;">Inspect</th>
+                  <th class="csp-style-28">Inspect</th>
                 </tr>
               </thead>
               <tbody id="logs-tbody">
                 <tr>
-                  <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                  <td colspan="7" class="csp-style-29">
                     Your request log will appear here after you start a test.
                   </td>
                 </tr>
@@ -378,6 +399,7 @@
     </div>
     <footer class="site-footer">
       <nav class="site-footer-links" aria-label="Legal and contact">
+        <a href="rate-limit-tester.html">Rate-limit tester</a>
         <a href="privacy.html">Privacy</a>
         <a href="mailto:saifiayan822@gmail.com">Contact</a>
       </nav>
@@ -392,28 +414,28 @@
         <h3>🔍 Request Inspector</h3>
         <button id="btn-close-modal" class="modal-close-btn">&times;</button>
       </div>
-      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+      <div class="csp-style-30">
         <div>
-          <strong style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Endpoint:</strong>
-          <div id="modal-method-url" style="font-family: var(--font-mono); font-size: 0.875rem; color: var(--accent-primary); word-break: break-all; margin-top: 0.2rem;"></div>
+          <strong class="csp-style-31">Endpoint:</strong>
+          <div id="modal-method-url" class="csp-style-32"></div>
         </div>
-        <div style="display: flex; gap: 1rem; align-items: center;">
-          <div><strong style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Status:</strong> <span id="modal-status-badge"></span></div>
-          <div><strong style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Latency:</strong> <span id="modal-duration" style="font-family: var(--font-mono);"></span></div>
+        <div class="csp-style-33">
+          <div><strong class="csp-style-31">Status:</strong> <span id="modal-status-badge"></span></div>
+          <div><strong class="csp-style-31">Latency:</strong> <span id="modal-duration" class="csp-style-34"></span></div>
         </div>
         <div>
-          <strong style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Rate Limit Headers Detected:</strong>
+          <strong class="csp-style-31">Rate Limit Headers Detected:</strong>
           <pre id="modal-ratelimit-headers" class="code-box">None detected</pre>
         </div>
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
-            <strong style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Response Body:</strong>
-            <button id="btn-copy-response" class="btn-secondary" style="padding: 0.15rem 0.45rem; font-size: 0.7rem;">Copy</button>
+          <div class="csp-style-35">
+            <strong class="csp-style-31">Response Body:</strong>
+            <button id="btn-copy-response" class="btn-secondary csp-style-36">Copy</button>
           </div>
           <pre id="modal-response-body" class="code-box"></pre>
         </div>
         <div>
-          <strong style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">All Response Headers:</strong>
+          <strong class="csp-style-31">All Response Headers:</strong>
           <pre id="modal-all-headers" class="code-box"></pre>
         </div>
       </div>
@@ -422,6 +444,7 @@
 
 
   <!-- Application Logic -->
+  <script src="analyzer.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

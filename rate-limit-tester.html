@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="description" content="Test an API's rate-limit behavior in your browser. See HTTP 429 responses, exposed quota headers, Retry-After guidance, and a shareable aggregate report with Pulse.">
+  <link rel="canonical" href="https://apulse.tech/rate-limit-tester.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Pulse">
+  <meta property="og:title" content="API Rate-Limit Tester and 429 Analyzer | Pulse">
+  <meta property="og:description" content="Run a bounded browser test and understand HTTP 429, Retry-After, and exposed rate-limit headers.">
+  <meta property="og:url" content="https://apulse.tech/rate-limit-tester.html">
+  <meta name="twitter:card" content="summary">
+  <title>API Rate-Limit Tester and 429 Analyzer | Pulse</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="guide-theme.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#guide-main">Skip to guide</a>
+  <div class="guide-shell">
+    <header class="guide-header">
+      <a class="guide-brand" href="/" aria-label="Pulse home">pulse<span>.</span></a>
+      <div class="guide-header-tools">
+        <a class="btn-secondary" href="/#test-configuration">Open the tester →</a>
+        <button id="guide-theme-toggle" class="btn-secondary" type="button">Dark mode</button>
+      </div>
+    </header>
+    <main id="guide-main">
+      <section class="guide-hero">
+        <div class="eyebrow">FREE BROWSER TOOL / RATE LIMITS</div>
+        <h1>Test API rate limits and understand HTTP 429.</h1>
+        <p>Run a controlled series of requests from your browser. Pulse counts 429 responses, reads rate-limit headers your API exposes, and turns the run into a clear, shareable summary.</p>
+        <a class="guide-cta" href="/#rate-limit-analyzer">Open the rate-limit analyzer →</a>
+        <p class="guide-small">Only test endpoints you own or are authorized to test. Free runs are capped at 1,000 requests and 10 concurrent workers.</p>
+      </section>
+
+      <section class="guide-section" aria-labelledby="steps-title">
+        <h2 id="steps-title">How to run a useful test</h2>
+        <ol class="guide-steps">
+          <li><strong>Choose a safe endpoint.</strong> Use a GET endpoint you control. A health or read-only API route is better than a route that creates or deletes data.</li>
+          <li><strong>Use guided setup.</strong> Pulse selects 100 requests, one worker, a 100 ms delay, and automatic stop on the first observed 429. Review the target URL before starting.</li>
+          <li><strong>Read the evidence.</strong> Look for the first 429, the count of successful responses, and any readable quota or retry headers. Increase the workload only when your testing policy allows it.</li>
+          <li><strong>Share the summary.</strong> The analyzer's safe JSON export and share link contain aggregate numbers only. The existing raw CSV and JSON exports contain endpoint and response details, so treat those as sensitive.</li>
+        </ol>
+      </section>
+
+      <section class="guide-section" aria-labelledby="signals-title">
+        <h2 id="signals-title">What the signals mean</h2>
+        <div class="guide-grid">
+          <article><h3>HTTP 429</h3><p>The server reported that this request was rate limited. Pulse records the first observed 429 and can stop dispatching further requests. Requests already in flight may finish or be cancelled.</p></article>
+          <article><h3>Retry-After</h3><p>When the API exposes this header, it can indicate a wait time in seconds or an HTTP date. Pulse shows the observed delay; it does not schedule a retry for you.</p></article>
+          <article><h3>Limit and remaining</h3><p>Some APIs expose a quota and remaining allowance. Header names and windows vary by API. A visible quota is evidence about that API's policy, not proof of a universal requests-per-second threshold.</p></article>
+          <article><h3>No visible limit</h3><p>If no 429 appears, the test did not hit an observable limit. It does not mean the endpoint is unlimited. If requests fail at the network layer, CORS, connectivity, and server errors may look alike in the browser.</p></article>
+        </div>
+      </section>
+
+      <section class="guide-section" aria-labelledby="limits-title">
+        <h2 id="limits-title">What a browser test can tell you</h2>
+        <p>Pulse sends requests directly from your device, so latency and throughput depend on your network and browser. Browsers can read cross-origin response details only when the target allows it through CORS. Pulse reports the successful response rate observed before the first 429, when measurable, but that rate is <strong>not a guaranteed safe operating limit</strong>. A production limit should be verified against the API provider's policy and with controlled tests over time.</p>
+        <p>For an API you maintain, expose the rate-limit headers you want browser clients to read using <code>Access-Control-Expose-Headers</code>. If you do not control the API, a server-side test may be necessary to inspect its response details.</p>
+      </section>
+
+      <section class="guide-end">
+        <h2>Ready to inspect an endpoint?</h2>
+        <p>Start with the guided settings, then review the 429 and header evidence in the analyzer.</p>
+        <a class="guide-cta" href="/#rate-limit-analyzer">Start a free rate-limit test →</a>
+      </section>
+    </main>
+    <footer class="guide-footer"><a href="/">Pulse</a><a href="privacy.html">Privacy</a><span>© 2026 Pulse</span></footer>
+  </div>
+</body>
+</html>
