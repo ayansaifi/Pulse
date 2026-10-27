@@ -18,10 +18,11 @@
   <meta name="twitter:description" content="Test API response times, throughput, and rate limits from your browser. No account required.">
   <title>Pulse — Free Browser-Based API Load Tester</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="workspace.css">
   <!-- Chart.js for real-time performance graphs -->
   <script src="chart.umd.min.js"></script>
 </head>
-<body>
+<body class="workspace-page">
   <div class="app-wrapper">
     <!-- Production Navbar -->
     <header class="app-header">
@@ -40,8 +41,9 @@
           <p>API performance workspace</p>
         </div>
       </div>
+      <nav class="workspace-nav" aria-label="Main navigation"><a href="index.html" aria-current="page">Workspace</a><a href="rate-limit-tester.html">Learn</a></nav>
       <div class="header-tools">
-        <a class="btn-secondary" href="rate-limit-tester.html">Rate-limit guide</a>
+        <span class="free-badge">Free workspace</span>
         <button id="theme-toggle" class="btn-secondary" title="Toggle Dark/Light theme">
           Theme
         </button>
@@ -52,48 +54,38 @@
 
     <section class="workspace-heading">
       <div class="workspace-copy">
-        <div class="eyebrow">API OBSERVABILITY <span>/</span> LOAD TEST</div>
-        <h1>Test API performance<br>from your browser.</h1>
-        <p>Load test an endpoint and inspect response time, throughput, and rate limits—without sending test traffic through Pulse.</p>
-        <a class="workspace-guide-link" href="rate-limit-tester.html">New: guided API rate-limit analysis →</a>
+        <div class="eyebrow">YOUR PERFORMANCE LAB</div>
+        <h1>Every request.<br><span>A clearer picture.</span></h1>
+        <p>Understand how your API behaves under pressure.<br> Configure a run. Watch it live. Share what you learn.</p>
       </div>
-      <div class="workspace-proof"><div class="proof-mark"><span></span><span></span><span></span><span></span><span></span></div><div><strong>Runs from your browser</strong><small>No account. No test traffic routed through Pulse.</small></div></div>
+      <div class="workspace-proof">
+        <div class="proof-wave" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div><span class="proof-eyebrow">LOCAL BY DESIGN</span><strong>Your browser. Your requests.</strong><small>No account needed. Test traffic goes directly to your API.</small></div>
+      </div>
     </section>
 
+    <nav class="mobile-workspace-navigation" aria-label="Workspace steps">
+      <button type="button" data-workspace-step="setup" aria-pressed="true" aria-controls="setup-workspace">01 &nbsp; Configure</button>
+      <button type="button" data-workspace-step="results" aria-pressed="false" aria-controls="results-workspace">02 &nbsp; Results</button>
+    </nav>
+    <!-- Main Workspace Grid -->
+    <div class="main-layout">
+      <!-- Left Column: Configuration Workspace -->
+      <aside class="sidebar-workspace" id="setup-workspace">
+        <div class="panel-card" id="test-configuration" tabindex="-1">
+          <div class="panel-title">
+            <span class="panel-title-text">Configure your run</span>
+            <span class="browser-only-note" title="Pulse sends requests directly from your browser.">01 / SETUP</span>
+          </div>
 
-
-    <!-- Quick Presets Launchpad -->
-    <div class="preset-container">
-      <div class="preset-heading"><span class="section-index">01</span><span><strong>Start with a preset</strong><small>Choose a scenario or configure your own</small></span></div>
+<div class="preset-container">
+      <div class="preset-heading"><span><strong>Start with a preset</strong><small>A starting point for your next run</small></span></div>
       <button class="preset-tag active" data-preset="json-get-100">Sample API</button>
       <button class="preset-tag" data-preset="rate-limit-demo">Rate limit demo</button>
       <button class="preset-tag" data-preset="burst-1000">1,000 requests</button>
       <button class="preset-tag" data-preset="post-echo">POST request</button>
     </div>
-
-    <section class="plan-note" aria-label="Pulse plans"><div class="plan-section-heading"><span class="section-index">02</span><span><strong>Plans</strong><small>Start free, upgrade when you need more</small></span></div>
-      <article class="plan-card plan-card-free">
-        <div class="plan-card-top"><span class="plan-status plan-status-live"><i></i> Available now</span><span class="plan-price">Free</span></div>
-        <h3>Everything you need to test an endpoint.</h3>
-        <p>1,000 requests per run · 10 workers · live metrics · CSV and JSON exports.</p>
-      </article>
-      <article class="plan-card plan-card-pro">
-        <div class="plan-card-top"><span class="plan-status plan-status-soon">On the roadmap</span><span class="plan-price">Pro</span></div>
-        <h3>Keep an eye on performance over time.</h3>
-        <p>Saved history · scheduled checks · alerts · shared team workspaces.</p>
-      </article>
-    </section>
-
-    <!-- Main Workspace Grid -->
-    <div class="main-layout">
-      <!-- Left Column: Configuration Workspace -->
-      <aside class="sidebar-workspace">
-        <div class="panel-card" id="test-configuration" tabindex="-1">
-          <div class="panel-title">
-            <span class="panel-title-text"><span class="section-index">03</span><span>Test configuration</span></span>
-            <span class="browser-only-note" title="Pulse sends requests directly from your browser.">Browser-only testing</span>
-          </div>
-
+          <div class="config-section-label">Endpoint</div>
           <!-- Method & URL -->
           <div class="form-field">
             <label class="field-label">
@@ -101,7 +93,7 @@
               <span id="url-status-hint" class="csp-style-01">HTTPS Recommended</span>
             </label>
             <div class="input-split">
-              <select id="http-method" class="ui-select method-select" data-method="GET">
+              <select id="http-method" aria-label="HTTP method" class="ui-select method-select" data-method="GET">
                 <option value="GET">GET</option>
                 <option value="POST">POST</option>
                 <option value="PUT">PUT</option>
@@ -109,17 +101,18 @@
                 <option value="DELETE">DELETE</option>
                 <option value="HEAD">HEAD</option>
               </select>
-              <input type="url" id="target-url" class="ui-input" placeholder="https://jsonplaceholder.typicode.com/posts/1" value="https://jsonplaceholder.typicode.com/posts/1" required>
+              <input type="url" id="target-url" aria-label="Target endpoint" class="ui-input" placeholder="https://jsonplaceholder.typicode.com/posts/1" value="https://jsonplaceholder.typicode.com/posts/1" required>
             </div>
           </div>
 
+          <div class="config-section-label">Traffic</div>
           <!-- Total Requests Input -->
           <div class="form-field">
             <div class="field-label">
               <span>Total requests</span>
               <span class="request-count-value"><span id="request-count-display">100</span><span class="request-count-limit">/ 1,000</span></span>
             </div>
-            <input type="number" id="total-requests" class="ui-input request-volume-input" value="100" min="1" max="1000" step="1" inputmode="numeric" aria-describedby="request-limit-help">
+            <input type="number" id="total-requests" aria-label="Total requests" class="ui-input request-volume-input" value="100" min="1" max="1000" step="1" inputmode="numeric" aria-describedby="request-limit-help">
             <div class="request-capacity" aria-hidden="true"><span id="request-capacity-fill"></span></div>
             <p class="request-limit-help" id="request-limit-help">Free plan limit <strong>1,000 requests</strong> per run</p>
             <div class="pill-group" aria-label="Quick request count">
@@ -130,6 +123,7 @@
             </div>
           </div>
 
+          <div class="traffic-grid">
           <!-- Concurrency Workers Slider -->
           <div class="form-field">
             <div class="field-label">
@@ -137,7 +131,7 @@
               <span id="concurrency-val" class="slider-badge">5</span>
             </div>
             <div class="slider-wrap">
-              <input type="range" id="concurrency-slider" min="1" max="10" value="5">
+              <input type="range" id="concurrency-slider" aria-label="Concurrent workers" min="1" max="10" value="5">
             </div>
             <div class="csp-style-02">
               Simultaneous in-flight requests running in parallel
@@ -151,10 +145,11 @@
               <span id="delay-val" class="slider-badge">0ms</span>
             </div>
             <div class="slider-wrap">
-              <input type="range" id="delay-slider" min="0" max="1000" step="10" value="0">
+              <input type="range" id="delay-slider" aria-label="Request delay" min="0" max="1000" step="10" value="0">
             </div>
           </div>
 
+          </div>
           <!-- Safety Switch -->
           <div class="form-field">
             <label class="custom-switch">
@@ -166,6 +161,7 @@
             </label>
           </div>
 
+          <details class="advanced-settings"><summary>Request options <span>Headers, body &amp; authentication</span></summary>
           <!-- Request Details Subtabs -->
           <div class="subtabs-bar">
             <button class="subtab-btn active" data-tab="tab-headers">Headers (<span id="header-count">1</span>)</button>
@@ -187,7 +183,7 @@
 
           <!-- Body View -->
           <div id="tab-body" class="subtab-view">
-            <textarea id="request-body" class="ui-textarea csp-style-05" rows="5" placeholder='{"userId": 1, "testId": "{{id}}", "timestamp": "{{timestamp}}"}'></textarea>
+            <textarea id="request-body" aria-label="Request body" class="ui-textarea csp-style-05" rows="5" placeholder='{"userId": 1, "testId": "{{id}}", "timestamp": "{{timestamp}}"}'></textarea>
             <div class="csp-style-06">
               <span class="csp-style-07">
                 Tags: <code>{{id}}</code>, <code>{{timestamp}}</code>, <code>{{random}}</code>, <code>{{uuid}}</code>
@@ -200,11 +196,12 @@
           <div id="tab-auth" class="subtab-view">
             <div class="form-field">
               <label class="field-label">Authorization token (Bearer)</label>
-              <input type="password" id="auth-bearer-token" class="ui-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+              <input type="password" id="auth-bearer-token" aria-label="Authorization token" class="ui-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
             </div>
             <button id="btn-apply-auth" class="btn-secondary csp-style-09">Apply to Headers</button>
           </div>
 
+          </details>
           <!-- Primary Execution Controls -->
           <div class="controls-grid">
             <button id="btn-start" class="btn-cta btn-start">Start test</button>
@@ -219,7 +216,7 @@
       </aside>
 
       <!-- Right Column: Observability & Results Command Center -->
-      <main class="results-command-center">
+      <main class="results-command-center" id="results-workspace">
         <!-- Live Execution Bar -->
         <div class="panel-card progress-banner">
           <div class="progress-header-info">
@@ -240,6 +237,72 @@
           </div>
         </div>
 
+        <div class="result-navigation" role="tablist" aria-label="Test results">
+          <button type="button" id="tab-overview" role="tab" aria-selected="true" aria-controls="view-overview" data-result-tab="overview">Overview</button>
+          <button type="button" id="tab-limits" role="tab" aria-selected="false" aria-controls="view-limits" tabindex="-1" data-result-tab="limits">Rate limits &amp; report</button>
+          <button type="button" id="tab-requests" role="tab" aria-selected="false" aria-controls="view-requests" tabindex="-1" data-result-tab="requests">Request log</button>
+        </div>
+        <section id="view-overview" class="result-view" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
+          <div class="view-heading"><div><h2>Performance at a glance</h2><p>Live measurements from your current run.</p></div><span class="view-kicker">02 / OBSERVE</span></div>
+        <!-- SaaS Performance KPI Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card green">
+            <div class="kpi-caption">Success Rate</div>
+            <div id="m-success-rate" class="kpi-number csp-style-18">—</div>
+            <div class="kpi-footnote"><span id="m-2xx">0</span> HTTP 2xx</div>
+          </div>
+          <div class="kpi-card amber">
+            <div class="kpi-caption">Rate Limited (429)</div>
+            <div id="m-429" class="kpi-number csp-style-21">0</div>
+            <div class="kpi-footnote" id="m-429-pct">0% of total</div>
+          </div>
+          <div class="kpi-card red">
+            <div class="kpi-caption">Errors (4xx / 5xx)</div>
+            <div id="m-errors" class="kpi-number csp-style-17">0</div>
+            <div class="kpi-footnote"><span id="m-4xx">0</span> client &bull; <span id="m-5xx">0</span> server</div>
+          </div>
+          <div class="kpi-card blue">
+            <div class="kpi-caption">Throughput (Avg / Peak)</div>
+            <div id="m-rps" class="kpi-number csp-style-14">0.0</div>
+            <div class="kpi-footnote">Peak: <span id="m-peak-rps">0.0</span> RPS</div>
+          </div>
+          <div class="kpi-card purple">
+            <div class="kpi-caption">Average Latency</div>
+            <div id="m-latency-avg" class="kpi-number">0ms</div>
+            <div class="kpi-footnote">Min: <span id="m-latency-min">0</span>ms &bull; Max: <span id="m-latency-max">0</span>ms</div>
+          </div>
+          <div class="kpi-card purple">
+            <div class="kpi-caption">Percentiles (p50 / p95 / p99)</div>
+            <div id="m-latency-p95" class="kpi-number csp-style-20">-- / -- / --</div>
+            <div class="kpi-footnote">Tail response distribution</div>
+          </div>
+        </div>
+
+        <!-- Interactive Chart Visualizations -->
+        <div class="charts-row">
+          <div class="panel-card">
+            <h3 class="panel-title chart-title">
+              <span class="panel-title-text"><span class="chart-heading-mark">↗</span>Response latency</span>
+            </h3>
+            <div class="chart-viewport">
+              <canvas id="latencyChart"></canvas>
+              <div class="chart-empty"><span class="empty-chart-mark" aria-hidden="true">↗</span><strong>See the shape of your performance</strong><p>Start a test to watch response times appear.</p></div>
+            </div>
+          </div>
+          <div class="panel-card">
+            <h3 class="panel-title chart-title">
+              <span class="panel-title-text"><span class="chart-heading-mark">◒</span>Response status</span>
+            </h3>
+            <div class="chart-viewport">
+              <canvas id="statusChart"></canvas>
+              <div class="chart-empty"><span class="empty-chart-mark" aria-hidden="true">◎</span><strong>Every response has a story</strong><p>Your response breakdown will appear here.</p></div>
+            </div>
+          </div>
+        </div>
+
+        </section>
+        <section id="view-limits" class="result-view" role="tabpanel" aria-labelledby="tab-limits" tabindex="0" hidden>
+          <div class="view-heading"><div><h2>Find the boundaries</h2><p>Explore quota signals and share your findings.</p></div></div>
         <!-- Hero Rate Limit & Quota Reach Inspector -->
         <div class="panel-card shield-panel" id="rate-limit-panel">
           <div class="panel-title csp-style-15">
@@ -289,8 +352,8 @@
           <p class="analyzer-intro">See when HTTP 429 appears and what rate-limit headers the API exposes. One run cannot establish a guaranteed safe rate.</p>
           <div class="analyzer-actions">
             <button id="btn-guided-setup" class="btn-secondary" type="button">Use guided setup</button>
-            <button id="btn-report-download" class="btn-secondary" type="button" disabled>Download safe report</button>
-            <button id="btn-report-share" class="btn-secondary" type="button" disabled>Copy share link</button>
+            <button id="btn-report-download" class="btn-secondary" type="button" disabled>Download report</button>
+            <button id="btn-report-share" class="btn-secondary" type="button" disabled>Copy report link</button>
           </div>
           <p id="analyzer-share-note" class="analyzer-note" role="status">Reports and share links contain aggregate numbers only. Endpoint URLs, headers, and response bodies are excluded.</p>
           <div id="analyzer-summary" class="analyzer-summary" aria-live="polite">Run a test to see the analysis.</div>
@@ -298,65 +361,14 @@
           <p class="analyzer-note">Browser restrictions can hide response headers. A network failure may be caused by CORS, connectivity, or the target server.</p>
         </section>
 
-        <!-- SaaS Performance KPI Grid -->
-        <div class="kpi-grid">
-          <div class="kpi-card green">
-            <div class="kpi-caption">Success Rate</div>
-            <div id="m-success-rate" class="kpi-number csp-style-18">—</div>
-            <div class="kpi-footnote"><span id="m-2xx">0</span> HTTP 2xx</div>
-          </div>
-          <div class="kpi-card amber">
-            <div class="kpi-caption">Rate Limited (429)</div>
-            <div id="m-429" class="kpi-number csp-style-21">0</div>
-            <div class="kpi-footnote" id="m-429-pct">0% of total</div>
-          </div>
-          <div class="kpi-card red">
-            <div class="kpi-caption">Errors (4xx / 5xx)</div>
-            <div id="m-errors" class="kpi-number csp-style-17">0</div>
-            <div class="kpi-footnote"><span id="m-4xx">0</span> client &bull; <span id="m-5xx">0</span> server</div>
-          </div>
-          <div class="kpi-card blue">
-            <div class="kpi-caption">Throughput (Avg / Peak)</div>
-            <div id="m-rps" class="kpi-number csp-style-14">0.0</div>
-            <div class="kpi-footnote">Peak: <span id="m-peak-rps">0.0</span> RPS</div>
-          </div>
-          <div class="kpi-card purple">
-            <div class="kpi-caption">Average Latency</div>
-            <div id="m-latency-avg" class="kpi-number">0ms</div>
-            <div class="kpi-footnote">Min: <span id="m-latency-min">0</span>ms &bull; Max: <span id="m-latency-max">0</span>ms</div>
-          </div>
-          <div class="kpi-card purple">
-            <div class="kpi-caption">Percentiles (p50 / p95 / p99)</div>
-            <div id="m-latency-p95" class="kpi-number csp-style-20">-- / -- / --</div>
-            <div class="kpi-footnote">Tail response distribution</div>
-          </div>
-        </div>
-
-        <!-- Interactive Chart Visualizations -->
-        <div class="charts-row">
-          <div class="panel-card">
-            <h3 class="panel-title chart-title">
-              <span class="panel-title-text"><span class="chart-heading-mark">↗</span>Response latency</span>
-            </h3>
-            <div class="chart-viewport">
-              <canvas id="latencyChart"></canvas>
-            </div>
-          </div>
-          <div class="panel-card">
-            <h3 class="panel-title chart-title">
-              <span class="panel-title-text"><span class="chart-heading-mark">◒</span>Response status</span>
-            </h3>
-            <div class="chart-viewport">
-              <canvas id="statusChart"></canvas>
-            </div>
-          </div>
-        </div>
-
+        </section>
+        <section id="view-requests" class="result-view" role="tabpanel" aria-labelledby="tab-requests" tabindex="0" hidden>
+          <div class="view-heading"><div><h2>Every response, in detail</h2><p>Filter results, inspect a request, or export your run.</p></div></div>
         <!-- Request Stream & Table -->
         <div class="panel-card">
           <div class="table-toolbar">
             <h3 class="panel-title csp-style-15">
-              <span class="panel-title-text"><span class="section-index">04</span>Request log <span class="log-count-badge" id="log-count">0</span></span>
+              <span class="panel-title-text">Request log <span class="log-count-badge" id="log-count">0</span></span>
             </h3>
             <div class="filter-group">
               <button class="filter-chip active" data-filter="all">All</button>
@@ -395,8 +407,21 @@
             </table>
           </div>
         </div>
+        </section>
       </main>
     </div>
+    <details class="plans-disclosure"><summary>Made for focused testing <span>Explore Free &amp; upcoming Pro</span></summary><section class="plan-note" aria-label="Pulse plans"><div class="plan-section-heading"><span><strong>Plans</strong><small>Built for your next step</small></span></div>
+      <article class="plan-card plan-card-free">
+        <div class="plan-card-top"><span class="plan-status plan-status-live"><i></i> Available now</span><span class="plan-price">Free</span></div>
+        <h3>Everything you need to test an endpoint.</h3>
+        <p>1,000 requests per run · 10 workers · live metrics · CSV and JSON exports.</p>
+      </article>
+      <article class="plan-card plan-card-pro">
+        <div class="plan-card-top"><span class="plan-status plan-status-soon">On the roadmap</span><span class="plan-price">Pro</span></div>
+        <h3>Keep an eye on performance over time.</h3>
+        <p>Saved history · scheduled checks · alerts · shared team workspaces.</p>
+      </article>
+    </section></details>
     <footer class="site-footer">
       <nav class="site-footer-links" aria-label="Legal and contact">
         <a href="rate-limit-tester.html">Rate-limit tester</a>
@@ -446,5 +471,6 @@
   <!-- Application Logic -->
   <script src="analyzer.js"></script>
   <script src="app.js"></script>
+  <script src="workspace.js"></script>
 </body>
 </html>

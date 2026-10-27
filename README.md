@@ -16,7 +16,11 @@ Pro is coming soon with saved history, scheduled checks, alerts, team workspaces
 
 The guided setup selects 100 GET requests, one worker, a 100 ms delay, and stop on the first observed HTTP 429. After any run, the analyzer summarizes 429 responses, exposed rate-limit and Retry-After headers, network failures, and observed throughput before the first 429. A single browser run does not establish a guaranteed safe rate. The public guide is at `rate-limit-tester.html`.
 
-The analyzer's separate JSON report and share link include aggregate numbers only; they exclude endpoint URLs, request and response headers, credentials, and response bodies. Share links encode that report in the URL fragment and do not require a server. The original CSV and JSON exports remain detailed and can contain sensitive endpoint data.
+The analyzer's separate JSON report and share link include aggregate numbers only; they exclude endpoint URLs, request and response headers, credentials, and response bodies. Share links open `report.html`, which reads the report from the URL fragment without storing it on a server or making test requests. Previously copied homepage report links redirect to the dedicated view. Invalid or incomplete links show an explanation. The original CSV and JSON exports remain detailed and can contain sensitive endpoint data.
+
+## Workspace
+
+The setup panel and tabbed results sit side by side on desktop. Smaller screens offer Configure and Results steps; starting a valid run opens Results. Advanced request settings and plan information can be expanded as needed. `workspace.css` reuses the site's green light/dark theme, and `workspace.js` manages navigation and chart empty states.
 
 ## Run locally or on Cloudflare Pages
 
@@ -39,3 +43,5 @@ Rate-limit reset values are interpreted heuristically and may vary by API.
 ## Verify
 
 Run `node tests/run.js` and `node tests/analyzer.js` for focused checks of Free-plan limits, cancellation, analyzer behavior, and aggregate report privacy. This does not replace browser compatibility, accessibility, security, or real-network testing.
+
+With Playwright available, run `node tests/browser.cjs` to exercise a local test run, report sharing, old and invalid links, keyboard tabs, responsive layouts, and dark mode under the site's CSP. Set `PULSE_BROWSER_PATH` to an installed Chromium browser if needed. Optional `PULSE_SCREENSHOT_DIR` saves preview screenshots. The test server binds to localhost and uses a local API fixture.

@@ -145,14 +145,25 @@ const DOM = {
   btnCopyResponse: document.getElementById('btn-copy-response'),
 };
 
+// Previously shared homepage links open the same dedicated report view.
+function openSharedReport() {
+  if (location.hash.startsWith('#report=')) {
+    const reportUrl = new URL('report.html', location.href);
+    reportUrl.hash = location.hash;
+    location.replace(reportUrl.href);
+    return true;
+  }
+  return false;
+}
+
 // Bootstrap App
 document.addEventListener('DOMContentLoaded', () => {
+  if (openSharedReport()) return;
+  window.addEventListener('hashchange', openSharedReport);
   initTheme();
   if (typeof Chart === 'undefined') { DOM.statusBadge.textContent = 'Charts unavailable; reload'; DOM.btnStart.disabled = true; return; }
   initCharts();
   bindEvents();
-  const sharedReport = PulseAnalyzer.readShareHash(location.hash);
-  if (sharedReport) renderAnalyzer(sharedReport, true);
 });
 
 // Theme Management
@@ -174,21 +185,25 @@ DOM.themeToggle.addEventListener('click', () => {
 
 function updateChartsTheme(isDark) {
   if (!latencyChart || !statusChart) return;
-  const textColor = isDark ? '#94a3b8' : '#475569';
-  const gridColor = isDark ? '#1e293b' : '#e2e8f0';
+  const textColor = isDark ? '#a5b3ac' : '#64716b';
+  const gridColor = isDark ? '#2c3a35' : '#e3e8e3';
   
   latencyChart.options.scales.x.grid.color = gridColor;
   latencyChart.options.scales.y.grid.color = gridColor;
   latencyChart.options.scales.x.ticks.color = textColor;
   latencyChart.options.scales.y.ticks.color = textColor;
+  latencyChart.options.scales.y.title.color = textColor;
+  latencyChart.options.plugins.legend.labels.color = textColor;
+  statusChart.options.plugins.legend.labels.color = textColor;
   latencyChart.update();
+  statusChart.update();
 }
 
 // Chart.js Setup
 function initCharts() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const textColor = isDark ? '#94a3b8' : '#475569';
-  const gridColor = isDark ? '#1e293b' : '#e2e8f0';
+  const textColor = isDark ? '#a5b3ac' : '#64716b';
+  const gridColor = isDark ? '#2c3a35' : '#e3e8e3';
 
   // Latency & Quota Depletion Timeline
   const ctxLatency = document.getElementById('latencyChart').getContext('2d');
@@ -227,7 +242,7 @@ function initCharts() {
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: {
-          labels: { color: textColor, boxWidth: 10, font: { size: 10, family: 'Inter' } }
+          labels: { color: textColor, boxWidth: 10, font: { size: 11, family: 'Arial, sans-serif' } }
         },
         tooltip: {
           padding: 8,
@@ -284,8 +299,8 @@ function initCharts() {
       animation: { duration: 250 },
       plugins: {
         legend: {
-          position: 'right',
-          labels: { color: textColor, boxWidth: 10, font: { size: 10, family: 'Inter' } }
+          position: 'bottom',
+          labels: { color: textColor, boxWidth: 10, padding: 14, font: { size: 11, family: 'Arial, sans-serif' } }
         }
       },
       cutout: '70%'
@@ -1248,10 +1263,12 @@ function downloadAnalyzerReport() {
 async function shareAnalyzerReport() {
   const report = state.analyzerReport;
   if (!PulseAnalyzer.isValidReport(report)) return;
-  const url = location.origin + location.pathname + PulseAnalyzer.shareHash(report);
+  const reportUrl = new URL('report.html', location.href);
+  reportUrl.hash = PulseAnalyzer.shareHash(report);
+  const url = reportUrl.href;
   try {
     await navigator.clipboard.writeText(url);
-    DOM.analyzerShareNote.textContent = 'Safe report link copied. Only aggregate numbers are in the link.';
+    DOM.analyzerShareNote.textContent = 'Report link copied. It opens a dedicated summary page with no endpoint or credentials.';
   } catch {
     DOM.analyzerShareNote.textContent = 'Could not copy automatically. Use the download button to share the aggregate report.';
   }
