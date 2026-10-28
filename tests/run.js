@@ -11,5 +11,20 @@ async function main() { node('target-url').value='https://example.test/health?to
   let calls=0; context.fetch=async()=>{ const status=++calls===1?200:429; return { status, statusText:status===429?'Too Many Requests':'OK', headers:{forEach(fn){fn('10','x-ratelimit-limit'); fn(status===429?'0':'9','x-ratelimit-remaining'); if(status===429) fn('20','retry-after');}}, text:async()=>'{"private":"secret"}' }; };
   node('total-requests').value='3'; node('concurrency-slider').value='1'; node('stop-on-429').checked=true; await vm.runInContext('startTest()',context);
   const report=vm.runInContext('state.analyzerReport',context); assert.equal(report.completed,2); assert.equal(report.first429,2); assert.equal(report.retryAfterSeconds,20); assert.equal(node('btn-report-share').disabled,false); assert(node('analyzer-summary').textContent.includes('HTTP 429 first appeared'));
-  assert(!JSON.stringify(report).includes('secret')); vm.runInContext('clearInterval(state.resetTimerInterval)',context); console.log('Passed: validation, cancellation, and analyzer integration.'); }
+  assert(!JSON.stringify(report).includes('secret')); vm.runInContext('clearInterval(state.resetTimerInterval)',context);
+  assert.equal(node('rl-breach-req').textContent,'#2');
+  assert.match(node('rl-sustainable-rps').textContent,/RPS$/);
+  context.fetch=async()=>({status:200,statusText:'OK',headers:{forEach(){}},text:async()=>'ok'});
+  node('total-requests').value='2'; await vm.runInContext('startTest()',context);
+  assert.equal(node('rate-limit-badge').textContent,'No limit observed');
+  assert.equal(node('rl-limit').textContent,'Not exposed');
+  assert.equal(node('rl-remaining').textContent,'Not exposed');
+  assert.equal(node('rl-breach-req').textContent,'Not observed');
+  assert.equal(node('rl-sustainable-rps').textContent,'Not measured');
+  assert.match(node('rate-limit-msg').textContent,/does not mean the API has no limit/);
+  context.fetch=async()=>{throw new TypeError('Failed to fetch')};
+  node('total-requests').value='1'; await vm.runInContext('startTest()',context);
+  assert.equal(node('rate-limit-badge').textContent,'No readable responses');
+  assert.match(node('rate-limit-msg').textContent,/CORS, connectivity, or the target server/);
+  console.log('Passed: validation, cancellation, analyzer integration, and empty rate-limit state.'); }
 main().catch(error=>{console.error(error);process.exitCode=1});

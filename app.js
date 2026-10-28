@@ -613,6 +613,7 @@ async function startTest() {
   DOM.rateLimitBanner.style.display = 'none';
   DOM.rlLimit.textContent = '--';
   DOM.rlRemaining.textContent = '--';
+  DOM.rlRemaining.style.color = '';
   DOM.rlReset.textContent = '--';
   DOM.rlBreachReq.textContent = '--';
   DOM.rlSustainableRps.textContent = '--';
@@ -1055,6 +1056,32 @@ function finishTest() {
       delayMs: state.delayMs
     });
     renderAnalyzer(state.analyzerReport);
+    renderRateLimitPanel(state.analyzerReport);
+  }
+}
+
+function renderRateLimitPanel(report) {
+  if (report.limit === null) DOM.rlLimit.textContent = 'Not exposed';
+  if (report.remaining === null) DOM.rlRemaining.textContent = 'Not exposed';
+  if (report.resetSeconds === null && report.retryAfterSeconds === null) DOM.rlReset.textContent = 'Not exposed';
+  if (report.first429 === null) DOM.rlBreachReq.textContent = 'Not observed';
+  DOM.rlSustainableRps.textContent = report.observedBefore429Rps === null
+    ? 'Not measured'
+    : `${report.observedBefore429Rps} RPS`;
+
+  if (report.first429 !== null) return;
+  DOM.rateLimitBanner.style.display = 'flex';
+  DOM.rateLimitBanner.className = 'breach-alert warning';
+  if (report.counts.network === report.completed) {
+    DOM.rateLimitBadge.textContent = 'No readable responses';
+    DOM.rateLimitBadge.className = 'status-tag';
+    DOM.rateLimitMsg.textContent = 'Every request failed at the network layer. The browser cannot tell whether CORS, connectivity, or the target server caused it.';
+  } else if (report.limit === null && report.remaining === null && report.resetSeconds === null && report.retryAfterSeconds === null) {
+    DOM.rateLimitBadge.textContent = 'No limit observed';
+    DOM.rateLimitBadge.className = 'status-tag';
+    DOM.rateLimitMsg.textContent = 'No HTTP 429 or readable rate-limit headers appeared in this run. That does not mean the API has no limit; its CORS policy may hide those headers.';
+  } else {
+    DOM.rateLimitMsg.textContent = 'The API exposed rate-limit headers, but no HTTP 429 appeared in this run. The values shown are observations, not a guaranteed safe rate.';
   }
 }
 
@@ -1082,6 +1109,7 @@ function clearAll() {
   DOM.rateLimitBanner.style.display = 'none';
   DOM.rlLimit.textContent = '--';
   DOM.rlRemaining.textContent = '--';
+  DOM.rlRemaining.style.color = '';
   DOM.rlReset.textContent = '--';
   DOM.rlBreachReq.textContent = '--';
   DOM.rlSustainableRps.textContent = '--';
