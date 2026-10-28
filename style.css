@@ -1395,6 +1395,19 @@ body {
   gap: 1rem;
 }
 
+.footer-listing-badge {
+  display: block;
+  flex-basis: 100%;
+  text-align: center;
+  line-height: 0;
+  margin-top: 0.35rem;
+}
+
+.footer-listing-badge img {
+  width: 128px;
+  height: 40px;
+}
+
 .legal-page {
   min-height: 100vh;
 }
