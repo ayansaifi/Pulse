@@ -232,3 +232,130 @@
 @media (prefers-reduced-motion: reduce) {
   .workspace-page *, .report-page * { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
 }
+
+/* Clear action hierarchy and tactile states for the test workspace. */
+.workspace-page {
+  --action-shadow: 0 10px 22px rgba(27, 87, 66, .19);
+  --action-shadow-hover: 0 16px 30px rgba(27, 87, 66, .27);
+  --control-shadow-hover: 0 7px 16px rgba(25, 55, 44, .11);
+}
+[data-theme="dark"] .workspace-page {
+  --action-shadow: 0 10px 24px rgba(0, 0, 0, .26);
+  --action-shadow-hover: 0 16px 32px rgba(0, 0, 0, .36);
+  --control-shadow-hover: 0 8px 18px rgba(0, 0, 0, .22);
+}
+.workspace-page .btn-start {
+  position: relative;
+  overflow: hidden;
+  min-height: 54px;
+  border: 1px solid #1d614b;
+  background: linear-gradient(115deg, #176b55 0%, #268c6a 55%, #3b9e76 100%);
+  color: #fff;
+  font-size: .94rem;
+  font-weight: 750;
+  letter-spacing: .015em;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .24), var(--action-shadow);
+}
+.workspace-page .btn-start::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .12), transparent 54%);
+  pointer-events: none;
+}
+.workspace-page .start-icon {
+  width: 22px;
+  height: 22px;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .13);
+  flex: none;
+}
+.workspace-page .btn-start:hover:not(:disabled) {
+  background: linear-gradient(115deg, #17765d 0%, #2b9872 55%, #43ac80 100%);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .3), var(--action-shadow-hover);
+  opacity: 1;
+  transform: translateY(-3px);
+}
+.workspace-page .btn-start:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: inset 0 2px 7px rgba(0, 0, 0, .22), 0 3px 7px rgba(27, 87, 66, .14);
+}
+.workspace-page .btn-cta:not(.btn-start),
+.workspace-page .btn-secondary,
+.workspace-page .preset-tag,
+.workspace-page .quick-pill,
+.workspace-page .filter-chip,
+.workspace-page .mobile-workspace-navigation button {
+  box-shadow: 0 1px 2px rgba(25, 55, 44, .04);
+}
+.workspace-page .btn-pause { background: #e9ae55; color: #34240e; }
+.workspace-page .btn-stop { background: #c75d53; color: #fff; }
+.workspace-page .btn-cta:not(.btn-start):hover:not(:disabled),
+.workspace-page .btn-secondary:hover:not(:disabled),
+.workspace-page .preset-tag:hover,
+.workspace-page .quick-pill:hover,
+.workspace-page .filter-chip:hover,
+.workspace-page .mobile-workspace-navigation button:hover {
+  box-shadow: var(--control-shadow-hover);
+  transform: translateY(-2px);
+}
+.workspace-page .btn-secondary:hover:not(:disabled),
+.workspace-page .preset-tag:hover,
+.workspace-page .filter-chip:hover,
+.workspace-page .mobile-workspace-navigation button:hover {
+  border-color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 10%, var(--bg-surface));
+  color: var(--text-primary);
+}
+.workspace-page .btn-pause:hover:not(:disabled) { background: #f2bd69; }
+.workspace-page .btn-stop:hover:not(:disabled) { background: #d66a60; }
+.workspace-page .preset-tag.active,
+.workspace-page .quick-pill.active,
+.workspace-page .filter-chip.active,
+.workspace-page .mobile-workspace-navigation button[aria-pressed="true"] {
+  border-color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 16%, var(--bg-surface));
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 18%, transparent), 0 2px 8px rgba(25, 55, 44, .06);
+}
+.workspace-page .quick-pill:hover:not(.active) {
+  border-color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 12%, var(--bg-surface));
+  color: var(--text-primary);
+}
+.workspace-page .subtab-btn:hover,
+.workspace-page .result-navigation button:hover {
+  color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 7%, transparent);
+}
+.workspace-page .result-navigation button { transition: color 160ms ease, background-color 160ms ease; }
+.workspace-page .btn-cta:disabled,
+.workspace-page .btn-secondary:disabled {
+  box-shadow: none;
+  opacity: .48;
+  transform: none;
+}
+.workspace-page .btn-cta,
+.workspace-page .btn-secondary,
+.workspace-page .preset-tag,
+.workspace-page .quick-pill,
+.workspace-page .filter-chip,
+.workspace-page .mobile-workspace-navigation button {
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.workspace-page .btn-cta:active:not(:disabled),
+.workspace-page .btn-secondary:active:not(:disabled),
+.workspace-page .preset-tag:active,
+.workspace-page .quick-pill:active,
+.workspace-page .filter-chip:active,
+.workspace-page .mobile-workspace-navigation button:active { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .workspace-page .btn-cta:hover,
+  .workspace-page .btn-secondary:hover,
+  .workspace-page .preset-tag:hover,
+  .workspace-page .quick-pill:hover,
+  .workspace-page .filter-chip:hover,
+  .workspace-page .mobile-workspace-navigation button:hover { transform: none; }
+}
