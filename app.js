@@ -643,6 +643,11 @@ async function startTest() {
     workers.push(runWorker(i + 1, rawUrl, method, customHeaders, rawBody));
   }
 
+  // Record a valid run start without sending endpoint or request details.
+  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+    window.gtag('event', 'api_test_started');
+  }
+
   await Promise.all(workers);
   finishTest();
 }
