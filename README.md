@@ -30,7 +30,7 @@ The static `404.html` supplies a real not-found page on hosts that support it. T
 
 ## How it works
 
-The homepage, API load-testing guide, and rate-limit guide are public search landing pages with canonical URLs. sitemap.xml lists the site's public HTML pages and robots.txt points crawlers to it. The homepage includes visible product details and truthful WebSite and Organization structured data; guides use article metadata. No fabricated reviews or ratings are added.
+The homepage, API load-testing guide, and rate-limit guide are public search landing pages with canonical URLs. sitemap.xml lists those search landing pages and robots.txt points crawlers to it. The privacy page remains linked from the site but is marked `noindex, follow` so it does not compete with the homepage in product searches. The homepage includes visible product details and WebSite, Organization, and WebApplication structured data; guides use article metadata. Public landing pages share a 1200×630 social preview image, regenerated with `python scripts/generate_social_preview.py` (Pillow required). No fabricated reviews or ratings are added.
 
 Organic and AI-assisted search visibility still depends on discovery, indexing, third-party references, and each search provider's systems. After publishing, verify the domain in Google Search Console and Bing Webmaster Tools, submit /sitemap.xml, and request indexing for the public landing pages.
 
