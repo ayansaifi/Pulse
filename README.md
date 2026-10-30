@@ -40,6 +40,10 @@ The production site is configured to use Google Analytics 4 measurement ID `G-MW
 
 After deployment, open the live site and use GA4's Realtime report to verify collection. Use Reports to view users by day. GA4 automatically excludes known bots, but user counts are estimates and can miss people who block tracking. Search ranking positions remain in Google Search Console.
 
+## AdSense site review
+
+The homepage includes the AdSense ownership meta tag for publisher `ca-pub-8710886043532531`, and `/ads.txt` authorizes the corresponding `pub-8710886043532531` seller. In AdSense, select the meta tag or ads.txt ownership method, verify the site, and request review. The ad-serving script is not installed yet: Google documents a dynamic nonce-based CSP for reliable AdSense serving, whereas this static site currently uses a restrictive static CSP to protect the testing workspace. Ads and the related privacy/consent changes should be implemented after approval, with placements away from test controls.
+
 Configure an endpoint, request count, concurrency, delay, headers and optional body, then start a run. A request times out after 30 seconds. Stop cancels in-flight requests and waits for workers to finish. The 429 option halts further dispatches and cancels outstanding requests. Current and peak throughput count completions in a rolling one-second window; average throughput uses the run duration. Latency measures time to response headers, not full-body download time.
 
 Only test endpoints you are authorized to test. Browser connection limits, CORS, preflight requests, network conditions and the user's device affect results. Pulse does not route requests through a proxy. If the target blocks browser requests through CORS, configure CORS on that target or use a future Pro cloud-run test. Browsers can only expose rate-limit headers permitted by the target's CORS policy. Missing headers do not mean a limit does not exist. Results should not be used as a substitute for a controlled, server-side load test.
