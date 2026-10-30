@@ -34,6 +34,12 @@ The homepage, API load-testing guide, and rate-limit guide are public search lan
 
 Organic and AI-assisted search visibility still depends on discovery, indexing, third-party references, and each search provider's systems. After publishing, verify the domain in Google Search Console and Bing Webmaster Tools, submit /sitemap.xml, and request indexing for the public landing pages.
 
+## Visitor analytics
+
+The production site is configured to use Google Analytics 4 measurement ID `G-MW7RQ6YT1B` to estimate daily users. `analytics.js` is loaded on the site's HTML pages but only starts Google Analytics on `apulse.tech` or `www.apulse.tech`, so localhost and preview deployments do not affect reports. It supplies page and referrer URLs without query strings or fragments; in particular, shared report data in URL fragments is not included in those values. The site's Content Security Policy allows the Google tag, and `privacy.html` describes the analytics collection.
+
+After deployment, open the live site and use GA4's Realtime report to verify collection. Use Reports to view users by day. GA4 automatically excludes known bots, but user counts are estimates and can miss people who block tracking. Search ranking positions remain in Google Search Console.
+
 Configure an endpoint, request count, concurrency, delay, headers and optional body, then start a run. A request times out after 30 seconds. Stop cancels in-flight requests and waits for workers to finish. The 429 option halts further dispatches and cancels outstanding requests. Current and peak throughput count completions in a rolling one-second window; average throughput uses the run duration. Latency measures time to response headers, not full-body download time.
 
 Only test endpoints you are authorized to test. Browser connection limits, CORS, preflight requests, network conditions and the user's device affect results. Pulse does not route requests through a proxy. If the target blocks browser requests through CORS, configure CORS on that target or use a future Pro cloud-run test. Browsers can only expose rate-limit headers permitted by the target's CORS policy. Missing headers do not mean a limit does not exist. Results should not be used as a substitute for a controlled, server-side load test.

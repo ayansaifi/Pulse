@@ -42,7 +42,7 @@ async function main() {
     const noOverflow = async () => assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Page overflows the viewport');
     await page.goto(origin);
     await noOverflow();
-    assert.match(await page.title(), /Free Online API Load Tester/);
+    assert.match(await page.title(), /Free Browser-Based API Load Tester/);
     assert.equal(await page.locator('h1').count(), 1);
     assert.match(await page.locator('h1').textContent(), /Free API load testing\s*from your browser/);
     const description = await page.locator('meta[name="description"]').getAttribute('content');
@@ -51,7 +51,8 @@ async function main() {
     assert(siteData['@graph'].some(item => item['@type'] === 'WebSite' && item.name === 'Pulse'));
     assert(siteData['@graph'].some(item => item['@type'] === 'Organization' && item.url === 'https://apulse.tech/'));
     const sitemap = await (await page.request.get(origin + '/sitemap.xml')).text();
-    for (const url of ['/', '/privacy.html', '/rate-limit-tester.html', '/api-load-testing.html']) assert(sitemap.includes('https://apulse.tech' + url));
+    for (const url of ['/', '/rate-limit-tester.html', '/api-load-testing.html']) assert(sitemap.includes('https://apulse.tech' + url));
+    assert(!sitemap.includes('privacy.html'));
     assert(!sitemap.includes('report.html'));
     await page.goto(origin + '/api-load-testing.html');
     assert.match(await page.title(), /How to Load Test an API/);
